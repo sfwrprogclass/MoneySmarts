@@ -20,17 +20,22 @@ def main():
     pygame.init()
     pygame.font.init()
     pygame.mixer.init()  # Initialize mixer for sound
-    
+
+    # Make window resizable
+    screen = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
+    pygame.display.set_caption("Money Smartz")
+
     # Create game instance
     game = Game()
-    
+    game.screen = screen  # Pass screen to game if needed
+
     # Create GUI manager
     gui_manager = GUIManager(game)
     game.gui_manager = gui_manager
-    
+
     # Set initial screen
     gui_manager.set_screen(TitleScreen(game))
-    
+
     # Run the game
     try:
         gui_manager.run()
