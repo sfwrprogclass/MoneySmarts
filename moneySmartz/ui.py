@@ -115,8 +115,18 @@ class Screen:
         for button in self.buttons:
             action = button.update(mouse_pos, mouse_click)
             if action:
+                # Play button click sound
+                self.play_button_sound()
                 action()
                 return
+    
+    def play_button_sound(self):
+        """Play button click sound if available"""
+        if hasattr(self.game, 'gui_manager') and hasattr(self.game.gui_manager, 'sound_manager'):
+            try:
+                self.game.gui_manager.sound_manager.play_sound_effect('button_click')
+            except Exception as e:
+                print(f"Error playing button sound: {e}")
 
     def update(self):
         """Update the screen state."""
@@ -159,6 +169,9 @@ class GUIManager:
             self.sound_manager.load_music(startup_song_path, 'startup_song')
         else:
             print(f"Warning: Sound file not found at {startup_song_path}")
+
+        # Load button sound effect
+        self.sound_manager.load_sound('button_sound.mp3', 'button_click', 'effect')
 
     def set_screen(self, screen):
         """Set the current screen to be displayed."""
