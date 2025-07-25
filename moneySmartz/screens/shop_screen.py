@@ -49,6 +49,11 @@ class ShopScreen(Screen):
             self.buttons.append(btn)
             y += 60
         self.main_back_btn = Button(60, 600, 180, 50, "Back", self.go_back)
+        # Add inventory button
+        inventory_btn = Button(
+            SCREEN_WIDTH - 220, 20, 200, 50, "View Inventory", action=self.show_inventory_popup
+        )
+        self.buttons.append(inventory_btn)
 
     def create_payment_buttons(self):
         popup_x = 300
@@ -166,6 +171,16 @@ class ShopScreen(Screen):
         self.show_payment_popup = False
         self.message = ""
 
+    def show_inventory_popup(self):
+        self.show_inventory = True
+        self.inventory_popup_btn = Button(
+            SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 80, 200, 50, "Close", action=self.close_inventory_popup
+        )
+
+    def close_inventory_popup(self):
+        self.show_inventory = False
+        self.inventory_popup_btn = None
+
     def handle_events(self, events):
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = False
@@ -184,6 +199,16 @@ class ShopScreen(Screen):
                     if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
                         self.close_popup()
             return  # Prevent main buttons from being handled
+        elif hasattr(self, 'show_inventory') and self.show_inventory:
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_click = False
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click = True
+            action = self.inventory_popup_btn.update(mouse_pos, mouse_click)
+            if callable(action):
+                action()
+                return
         else:
             # Handle item selection buttons
             for btn in self.buttons:
@@ -237,3 +262,18 @@ class ShopScreen(Screen):
             for btn in [self.pay_cash_btn, self.pay_bank_btn, self.pay_credit_btn, self.popup_back_btn]:
                 if btn:
                     btn.draw(surface)
+        # Draw inventory popup if needed
+        if hasattr(self, 'show_inventory') and self.show_inventory:
+            pygame.draw.rect(surface, LIGHT_GRAY, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 150, 400, 300))
+            title_font = pygame.font.SysFont('Arial', FONT_LARGE)
+            title_surface = title_font.render("Inventory", True, BLACK)
+            title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 120))
+            surface.blit(title_surface, title_rect)
+            # List items
+            items = self.game.player.inventory if hasattr(self.game.player, 'inventory') else []
+            item_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+            for i, item in enumerate(items):
+                item_surface = item_font.render(f"- {item}", True, BLACK)
+                item_rect = item_surface.get_rect(left=SCREEN_WIDTH // 2 - 180, top=SCREEN_HEIGHT // 2 - 80 + i * 30)
+                surface.blit(item_surface, item_rect)
+            self.inventory_popup_btn.draw(surface)

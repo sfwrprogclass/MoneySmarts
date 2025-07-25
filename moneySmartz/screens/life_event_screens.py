@@ -15,6 +15,7 @@ class HighSchoolGraduationScreen(Screen):
         super().__init__(game)
 
         # Title
+        self.recurring_bill_message = None
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
         self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
 
@@ -45,6 +46,19 @@ class HighSchoolGraduationScreen(Screen):
 
         self.buttons = [college_button, trade_button, work_button]
 
+    def show_recurring_bill_popup(self, bill_name, amount):
+        # Simple recurring bill popup logic
+        self.recurring_bill_message = f"New recurring bill: {bill_name} - ${amount}/month."
+        self.show_recurring_bill = True
+        self.recurring_bill_btn = Button(
+            SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 40, 200, 50, "OK", action=self.close_recurring_bill_popup
+        )
+
+    def close_recurring_bill_popup(self):
+        self.show_recurring_bill = False
+        self.recurring_bill_message = ""
+        self.recurring_bill_btn = None
+
     def go_to_college(self):
         """Choose to go to college."""
         # Check if player can afford college
@@ -60,6 +74,7 @@ class HighSchoolGraduationScreen(Screen):
             self.game.player.loans.append(loan)
 
         self.game.player.education = "College (In Progress)"
+        self.show_recurring_bill_popup("College Tuition", 20000 // 12)
 
         # Return to game screen
         from moneySmartz.screens.game_screen import GameScreen
@@ -79,6 +94,7 @@ class HighSchoolGraduationScreen(Screen):
             self.game.player.loans.append(loan)
 
         self.game.player.education = "Trade School"
+        self.show_recurring_bill_popup("Trade School Tuition", 10000 // 24)
 
         # Return to game screen
         from moneySmartz.screens.game_screen import GameScreen
@@ -87,6 +103,7 @@ class HighSchoolGraduationScreen(Screen):
     def start_working(self):
         """Choose to start working full-time."""
         self.game.player.education = "High School Graduate"
+        self.show_recurring_bill_popup("Rent", 800)
 
         # Go to job search screen
         from moneySmartz.screens.financial_screens import JobSearchScreen
@@ -144,6 +161,28 @@ class HighSchoolGraduationScreen(Screen):
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
+
+        # Draw recurring bill popup if needed
+        if hasattr(self, 'show_recurring_bill') and self.show_recurring_bill:
+            pygame.draw.rect(surface, LIGHT_GRAY, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100, 400, 200))
+            msg_surface = self.text_font.render(self.recurring_bill_message, True, BLACK)
+            msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(msg_surface, msg_rect)
+            self.recurring_bill_btn.draw(surface)
+
+    def handle_events(self, events):
+        # ...existing code...
+        if hasattr(self, 'show_recurring_bill') and self.show_recurring_bill:
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_click = False
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click = True
+            action = self.recurring_bill_btn.update(mouse_pos, mouse_click)
+            if callable(action):
+                action()
+                return
+        # ...existing code...
 
 class CollegeGraduationScreen(Screen):
     """

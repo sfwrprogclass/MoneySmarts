@@ -1557,12 +1557,18 @@ class Game:
             pickle.dump(self, f)
 
     def load_state(self, filename="savegame.dat"):
-        """Load the game state from a file."""
+        """Load the game state from a file, with error handling for empty/corrupt files."""
         import pickle
+        import os
+        if not os.path.exists(filename):
+            print(f"Save file '{filename}' does not exist.")
+            return
+        if os.path.getsize(filename) == 0:
+            print(f"Save file '{filename}' is empty. Cannot load game state.")
+            return
         try:
             with open(filename, "rb") as f:
                 loaded_game = pickle.load(f)
-            # Copy loaded attributes to self
             self.__dict__.update(loaded_game.__dict__)
         except Exception as e:
             print(f"Error loading game: {e}")
