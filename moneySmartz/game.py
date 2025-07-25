@@ -16,7 +16,7 @@ class Game:
         self.game_over = False
         self.events = self.initialize_events()
         self.gui_manager = None  # Will be set by the main script
-        self.paused = False  # Track paused state
+        self.paused = False  # Track the paused state
 
     def initialize_events(self):
         """Initialize the random events that can occur during gameplay."""
@@ -1555,6 +1555,17 @@ class Game:
         import pickle
         with open(filename, "wb") as f:
             pickle.dump(self, f)
+
+    def load_state(self, filename="savegame.dat"):
+        """Load the game state from a file."""
+        import pickle
+        try:
+            with open(filename, "rb") as f:
+                loaded_game = pickle.load(f)
+            # Copy loaded attributes to self
+            self.__dict__.update(loaded_game.__dict__)
+        except Exception as e:
+            print(f"Error loading game: {e}")
 
     def quit(self):
         """Quit the game (for GUI mode)."""

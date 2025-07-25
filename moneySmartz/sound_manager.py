@@ -7,27 +7,6 @@ class SoundManager:
         self.sounds = {}
         self.current_music = None
         self.music_volume = 0.5
-        self.sound_effects = {}
-
-    def load_sound(self, filename, name, sound_type='music'):
-        """Load sound files and store them by name and type"""
-        try:
-            if sound_type == 'music':
-                self.sounds[name] = filename
-            elif sound_type == 'effect':
-                full_path = os.path.join('assets', filename)
-                if os.path.exists(full_path):
-                    self.sound_effects[name] = pygame.mixer.Sound(full_path)
-                else:
-                    print(f"Sound file not found: {full_path}")
-        except Exception as e:
-            print(f"Error loading sound: {e}")
-            
-    def play_sound_effect(self, name, volume=1.0):
-        """Play a sound effect by name"""
-        if name in self.sound_effects:
-            self.sound_effects[name].set_volume(volume)
-            self.sound_effects[name].play()
         
     def load_music(self, filename, name):
         """Load music file and store it by name"""

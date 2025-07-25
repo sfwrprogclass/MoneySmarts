@@ -7,10 +7,23 @@ It initializes the game and starts the main game loop.
 
 import pygame
 import sys
-import os
 import traceback
 from moneySmartz import Game, GUIManager
 from moneySmartz.screens import TitleScreen
+
+# GUI Constants (keep only one set, remove duplicates)
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
+FPS = 60
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+LIGHT_GRAY = (230, 230, 230)
+DARK_GRAY = (100, 100, 100)
+BLUE = (0, 120, 255)
+LIGHT_BLUE = (100, 180, 255)
+GREEN = (0, 200, 0)
 
 def main():
     """

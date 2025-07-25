@@ -40,6 +40,7 @@ class VehiclePurchaseScreen(Screen):
             self.game.player.cash -= self.selected_vehicle['price']
             self.game.player.vehicle = self.selected_vehicle['name']
             self.message = f"You bought the {self.selected_vehicle['name']} with cash!"
+            self.selected_vehicle = None
         else:
             self.message = "Not enough cash."
 
@@ -52,6 +53,7 @@ class VehiclePurchaseScreen(Screen):
             acct.withdraw(self.selected_vehicle['price'])
             self.game.player.vehicle = self.selected_vehicle['name']
             self.message = f"You bought the {self.selected_vehicle['name']} from bank!"
+            self.selected_vehicle = None
         else:
             self.message = "Not enough in bank account."
 
@@ -63,6 +65,7 @@ class VehiclePurchaseScreen(Screen):
         if card and card.charge(self.selected_vehicle['price']):
             self.game.player.vehicle = self.selected_vehicle['name']
             self.message = f"You bought the {self.selected_vehicle['name']} on credit!"
+            self.selected_vehicle = None
         else:
             self.message = "Not enough credit or no card."
 
@@ -70,30 +73,23 @@ class VehiclePurchaseScreen(Screen):
         if not self.selected_vehicle:
             self.message = "Select a vehicle first."
             return
-        # Assume player.credit_score is available and 700+ is good
-        if hasattr(self.game.player, 'credit_score') and self.game.player.credit_score >= 700:
-            # Example: 20% down, rest as a recurring bill
-            down_payment = int(self.selected_vehicle['price'] * 0.2)
-            financed_amount = self.selected_vehicle['price'] - down_payment
-            if self.game.player.cash >= down_payment:
-                self.game.player.cash -= down_payment
-                self.game.player.vehicle = self.selected_vehicle['name']
-                # Add a recurring bill for the financed amount (e.g., 12 months)
-                monthly_payment = int(financed_amount / 12)
-                self.game.player.recurring_bills.append({
-                    'name': f"{self.selected_vehicle['name']} Loan",
-                    'amount': monthly_payment,
-                    'months': 12,
-                    'source': 'bank_or_credit'
-                })
-                self.message = f"Financed {self.selected_vehicle['name']}! ${monthly_payment}/mo for 12 months."
-            else:
-                self.message = f"Need at least 20% down payment: ${down_payment}."
+        # Example: check credit score and allow financing
+        if hasattr(self.game.player, 'credit_score') and self.game.player.credit_score >= 650:
+            self.game.player.loans.append({
+                'type': 'vehicle',
+                'amount': self.selected_vehicle['price'],
+                'name': self.selected_vehicle['name']
+            })
+            self.game.player.vehicle = self.selected_vehicle['name']
+            self.message = f"Financed {self.selected_vehicle['name']}! Loan added."
+            self.selected_vehicle = None
         else:
-            self.message = "Credit score too low to finance."
+            self.message = "Credit score too low for financing."
 
     def go_back(self):
         from moneySmartz.screens.shop_screen import ShopScreen
+        self.selected_vehicle = None
+        self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
     def handle_event(self, event):
@@ -109,6 +105,9 @@ class VehiclePurchaseScreen(Screen):
                     if btn.action:
                         btn.action()
                         return
+        if event.type == pygame.KEYDOWN:
+            if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
+                self.go_back()
 
     def draw(self, surface):
         surface.fill((240, 240, 220))  # Light tan background for vehicle screen
@@ -131,4 +130,3 @@ class VehiclePurchaseScreen(Screen):
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
         msg = msg_font.render(self.message, True, RED if "Not" in self.message or "low" in self.message else GREEN)
         surface.blit(msg, (80, 480))
-

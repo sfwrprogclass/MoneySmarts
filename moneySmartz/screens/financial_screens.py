@@ -1,6 +1,5 @@
 import pygame
 import random
-from pygame.locals import *
 from moneySmartz.constants import *
 from moneySmartz.ui import Screen, Button, TextInput
 from moneySmartz.models import BankAccount, Card, Loan, Asset
@@ -1120,7 +1119,7 @@ class PayCreditCardScreen(Screen):
             status_surface = self.text_font.render(self.status_message, True, self.status_color)
             status_rect = status_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
             surface.blit(status_surface, status_rect)
-        
+
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
@@ -1141,7 +1140,7 @@ class LoanDetailsScreen(Screen):
         
         # Buttons
         back_button = Button(
-            SCREEN_WIDTH // 2 - 220,
+            SCREEN_WIDTH // 2 - 100,
             SCREEN_HEIGHT - 80,
             200, 50,
             "Back",
@@ -1204,11 +1203,13 @@ class LoanDetailsScreen(Screen):
                     remaining_months = loan.current_balance / (loan.monthly_payment - (loan.current_balance * loan.interest_rate / 12))
                     remaining_years = remaining_months / 12
                     loan_details.append(f"Time Remaining: {remaining_years:.1f} years")
-                
-                # Calculate total interest if paid normally
-                total_interest = (loan.monthly_payment * remaining_months) - loan.current_balance
-                loan_details.append(f"Remaining Interest: ${total_interest:.2f}")
-                
+                    # Calculate total interest if paid normally
+                    total_interest = (loan.monthly_payment * remaining_months) - loan.current_balance
+                    loan_details.append(f"Remaining Interest: ${total_interest:.2f}")
+                else:
+                    loan_details.append("Time Remaining: N/A")
+                    loan_details.append("Remaining Interest: N/A")
+
                 for detail in loan_details:
                     color = RED if "Current Balance:" in detail else BLACK
                     detail_surface = self.small_font.render(detail, True, color)
@@ -1808,4 +1809,3 @@ class JobSearchScreen(Screen):
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
-

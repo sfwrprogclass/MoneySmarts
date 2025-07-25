@@ -5,6 +5,8 @@ from moneySmartz.constants import *
 from moneySmartz.ui import Screen, Button, TextInput
 from moneySmartz.models import Loan, Asset, Card
 
+BROWN = (139, 69, 19)
+
 class HighSchoolGraduationScreen(Screen):
     """
     Screen for high school graduation event.

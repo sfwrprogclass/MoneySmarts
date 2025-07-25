@@ -100,12 +100,12 @@ class GameScreen(Screen):
             if self.game.player.credit_card.balance > 0:
                 pay_credit_button = Button(
                     240, 
-                    SCREEN_HEIGHT - 210,
-                    200, 50,
-                    "Pay Credit Card",
-                    action=self.pay_credit_card
-                )
-                self.buttons.append(pay_credit_button)
+                SCREEN_HEIGHT - 210,
+                200, 50,
+                "Pay Credit Card",
+                action=self.pay_credit_card
+            )
+            self.buttons.append(pay_credit_button)
 
         # Loan buttons
         if self.game.player.loans:
@@ -159,9 +159,10 @@ class GameScreen(Screen):
             self.buttons.append(better_job_button)
 
         # --- System Control Buttons ---
+        # Move these buttons down below the top banner (e.g., y=100 and y=150)
         pause_button = Button(
             SCREEN_WIDTH - 220,
-            20,
+            100,
             90, 40,
             "Pause",
             action=self.pause_game
@@ -170,7 +171,7 @@ class GameScreen(Screen):
 
         play_button = Button(
             SCREEN_WIDTH - 120,
-            20,
+            100,
             90, 40,
             "Play",
             action=self.play_game
@@ -179,17 +180,26 @@ class GameScreen(Screen):
 
         save_button = Button(
             SCREEN_WIDTH - 220,
-            70,
+            150,
             90, 40,
             "Save",
             action=self.save_game
         )
         self.buttons.append(save_button)
 
-        quit_button = Button(
+        load_button = Button(
             SCREEN_WIDTH - 120,
-            70,
+            150,
             90, 40,
+            "Load",
+            action=self.load_game
+        )
+        self.buttons.append(load_button)
+
+        quit_button = Button(
+            SCREEN_WIDTH - 220,
+            200,
+            190, 40,
             "Quit",
             action=self.quit_game
         )
@@ -322,6 +332,11 @@ class GameScreen(Screen):
         """Save the current game state."""
         self.game.save_state()
         # Optionally, show a 'Game Saved' message
+
+    def load_game(self):
+        """Load the saved game state."""
+        self.game.load_state()
+        self.create_buttons()  # Refresh buttons after loading
 
     def quit_game(self):
         """Quit the game and return to main menu or exit."""

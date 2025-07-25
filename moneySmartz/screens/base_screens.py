@@ -1,7 +1,6 @@
 import pygame
 import random
 import os
-from pygame.locals import *
 from moneySmartz.constants import *
 from moneySmartz.ui import Screen, Button, TextInput
 from moneySmartz.sound_manager import SoundManager

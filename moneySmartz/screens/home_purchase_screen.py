@@ -37,11 +37,14 @@ class HomePurchaseScreen(Screen):
             self.game.player.cash -= self.selected_home['price']
             self.game.player.home = self.selected_home['name']
             self.message = f"Congratulations! You bought the {self.selected_home['name']}!"
+            self.selected_home = None
         else:
             self.message = "Not enough cash."
 
     def go_back(self):
         from moneySmartz.screens.shop_screen import ShopScreen
+        self.selected_home = None
+        self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
     def handle_event(self, event):
@@ -60,6 +63,9 @@ class HomePurchaseScreen(Screen):
                 if self.back_btn.action:
                     self.back_btn.action()
                     return
+        if event.type == pygame.KEYDOWN:
+            if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
+                self.go_back()
 
     def draw(self, surface):
         surface.fill((220, 240, 255))  # Light blue background for home screen
@@ -79,4 +85,3 @@ class HomePurchaseScreen(Screen):
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
         msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
         surface.blit(msg, (80, 420))
-
