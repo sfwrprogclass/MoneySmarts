@@ -636,8 +636,11 @@ class CreditCardScreen(Screen):
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def check_eligibility(self):
-        # Check if player is eligible for a credit card
-        if self.game.player.age < 18:
+        # Check if player exists and is eligible for a credit card
+        if not self.game.player:
+            self.message = "Game not started yet."
+            self.message_color = RED
+        elif self.game.player.age < 18:
             self.message = "You must be at least 18 years old to apply for a credit card."
             self.message_color = RED
         elif self.game.player.credit_card:
@@ -718,12 +721,15 @@ class CreditCardScreen(Screen):
 
         # Draw player info
         info_y = 100
-        credit_score_text = self.font.render(f"Your Credit Score: {self.game.player.credit_score}", True, BLACK)
-        surface.blit(credit_score_text, (50, info_y))
+        
+        # Check if player exists before accessing attributes
+        if self.game.player:
+            credit_score_text = self.font.render(f"Your Credit Score: {self.game.player.credit_score}", True, BLACK)
+            surface.blit(credit_score_text, (50, info_y))
 
-        if self.game.player.job:
-            income_text = self.font.render(f"Annual Income: ${self.game.player.salary}", True, BLACK)
-            surface.blit(income_text, (50, info_y + 30))
+            if self.game.player.job:
+                income_text = self.font.render(f"Annual Income: ${self.game.player.salary}", True, BLACK)
+                surface.blit(income_text, (50, info_y + 30))
 
         # Draw message
         message_lines = []
@@ -829,8 +835,9 @@ class CreditCardDetailsScreen(Screen):
 
     def scroll_down(self):
         """Scroll transaction history down."""
-        if self.scroll_position < max(0, len(self.game.player.credit_card.transaction_history) - self.max_visible_transactions):
-            self.scroll_position += 1
+        if self.game.player and self.game.player.credit_card:
+            if self.scroll_position < max(0, len(self.game.player.credit_card.transaction_history) - self.max_visible_transactions):
+                self.scroll_position += 1
 
     def make_payment(self):
         """Navigate to the payment screen."""
@@ -847,6 +854,20 @@ class CreditCardDetailsScreen(Screen):
         title_surface = self.title_font.render("Credit Card Details", True, BLACK)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
+        
+        # Check if player exists and has been initialized
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
+        
+        # Check if player has a credit card
+        if not self.game.player.credit_card:
+            no_card_text = self.text_font.render("You don't have a credit card yet.", True, BLACK)
+            no_card_rect = no_card_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_card_text, no_card_rect)
+            return
         
         # Credit card visual
         card_rect = pygame.Rect(50, 100, 300, 180)
@@ -939,8 +960,11 @@ class PayCreditCardScreen(Screen):
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
         self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
         
-        # Calculate minimum payment
-        self.min_payment = max(25, self.game.player.credit_card.balance * 0.03)
+        # Calculate minimum payment (with null checks)
+        if self.game.player and self.game.player.credit_card:
+            self.min_payment = max(25, self.game.player.credit_card.balance * 0.03)
+        else:
+            self.min_payment = 25  # Default minimum payment
         
         # Amount input
         self.amount_input = TextInput(
@@ -966,11 +990,17 @@ class PayCreditCardScreen(Screen):
             action=self.pay_minimum
         )
         
+        # Calculate button text with null checks
+        if self.game.player and self.game.player.credit_card:
+            full_payment_text = f"Pay Full (${self.game.player.credit_card.balance:.2f})"
+        else:
+            full_payment_text = "Pay Full (N/A)"
+        
         full_payment_button = Button(
             SCREEN_WIDTH // 2 - 100,
             SCREEN_HEIGHT // 2 - 20,
             200, 50,
-            f"Pay Full (${self.game.player.credit_card.balance:.2f})",
+            full_payment_text,
             color=GREEN,
             hover_color=LIGHT_GREEN,
             action=self.pay_full
@@ -1072,6 +1102,19 @@ class PayCreditCardScreen(Screen):
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
         
+        # Check if player exists and has credit card
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
+        
+        if not self.game.player.credit_card:
+            no_card_text = self.text_font.render("You don't have a credit card yet.", True, BLACK)
+            no_card_rect = no_card_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_card_text, no_card_rect)
+            return
+        
         # Current balance info
         balance_info = [
             f"Current Balance: ${self.game.player.credit_card.balance:.2f}",
@@ -1155,6 +1198,13 @@ class LoanDetailsScreen(Screen):
         title_surface = self.title_font.render("Loan Details", True, BLACK)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
+        
+        # Check if player exists and has been initialized
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
         
         if not self.game.player.loans:
             no_loans_text = self.text_font.render("You don't have any loans.", True, BLACK)
@@ -1253,6 +1303,19 @@ class ExtraLoanPaymentScreen(Screen):
     def create_buttons(self):
         """Create buttons for loan selection and payment."""
         self.buttons = []
+        
+        # Check if player exists and has loans
+        if not self.game.player or not self.game.player.loans:
+            # Just create back button
+            back_button = Button(
+                SCREEN_WIDTH // 2 - 100,
+                SCREEN_HEIGHT - 80,
+                200, 50,
+                "Back",
+                action=self.go_back
+            )
+            self.buttons.append(back_button)
+            return
         
         # Loan selection buttons
         if len(self.game.player.loans) > 1:
@@ -1373,6 +1436,13 @@ class ExtraLoanPaymentScreen(Screen):
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
         
+        # Check if player exists
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
+        
         if not self.game.player.loans:
             no_loans_text = self.text_font.render("You don't have any loans.", True, BLACK)
             no_loans_rect = no_loans_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -1474,6 +1544,13 @@ class AssetDetailsScreen(Screen):
         title_surface = self.title_font.render("Asset Details", True, BLACK)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
+        
+        # Check if player exists and has been initialized
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
         
         if not self.game.player.assets:
             no_assets_text = self.text_font.render("You don't have any assets yet.", True, BLACK)
@@ -1624,6 +1701,10 @@ class JobSearchScreen(Screen):
 
     def generate_job_options(self):
         """Generate job options based on player's education and experience."""
+        # Check if player exists
+        if not self.game.player:
+            return []
+        
         job_options = []
 
         # Current job info
@@ -1727,6 +1808,13 @@ class JobSearchScreen(Screen):
         title_surface = self.title_font.render("Job Search", True, BLACK)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
         surface.blit(title_surface, title_rect)
+
+        # Check if player exists
+        if not self.game.player:
+            no_player_text = self.text_font.render("Game not started yet.", True, BLACK)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            surface.blit(no_player_text, no_player_rect)
+            return
 
         # Current job info
         current_job_text = f"Current Job: {self.game.player.job if self.game.player.job else 'Unemployed'}"
