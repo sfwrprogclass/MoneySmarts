@@ -1,9 +1,9 @@
 import random
 import time
 import os
-from moneySmartz.models import Player, BankAccount, Card, Loan, Asset
-from moneySmartz.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
-from moneySmartz.screens.base_screens import EndGameScreen
+from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
+from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
+from moneySmarts.screens.base_screens import EndGameScreen
 
 class Game:
     """
@@ -228,7 +228,7 @@ class Game:
         
         # If in GUI mode, show the event screen
         if self.gui_manager is not None:
-            from moneySmartz.screens.random_event_screens import RandomEventScreen
+            from moneySmarts.screens.random_event_screens import RandomEventScreen
             event_screen = RandomEventScreen(self, event, cash_effect)
             self.gui_manager.set_screen(event_screen)
             return
@@ -1507,25 +1507,25 @@ class Game:
         """Check for life stage events and show appropriate screens (GUI version)."""
         # High school graduation
         if self.player.age == 18 and self.player.education == "High School":
-            from moneySmartz.screens.life_event_screens import HighSchoolGraduationScreen
+            from moneySmarts.screens.life_event_screens import HighSchoolGraduationScreen
             self.gui_manager.set_screen(HighSchoolGraduationScreen(self))
             return True
 
         # College graduation (if went to college)
         elif self.player.age == 22 and self.player.education == "College (In Progress)":
-            from moneySmartz.screens.life_event_screens import CollegeGraduationScreen
+            from moneySmarts.screens.life_event_screens import CollegeGraduationScreen
             self.gui_manager.set_screen(CollegeGraduationScreen(self))
             return True
 
         # First full-time job opportunity
         elif self.player.age == 22 and not self.player.job and self.player.education != "College (In Progress)":
-            from moneySmartz.screens.financial_screens import JobSearchScreen
+            from moneySmarts.screens.financial_screens import JobSearchScreen
             self.gui_manager.set_screen(JobSearchScreen(self))
             return True
 
         # Car purchase opportunity
         elif self.player.age == 20 and not any(a.asset_type == "Car" for a in self.player.assets):
-            from moneySmartz.screens.life_event_screens import CarPurchaseScreen
+            from moneySmarts.screens.life_event_screens import CarPurchaseScreen
             self.gui_manager.set_screen(CarPurchaseScreen(self))
             return True
 

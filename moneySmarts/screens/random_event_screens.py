@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button
 
 class RandomEventScreen(Screen):
     """Screen displayed when a random event occurs during gameplay."""
@@ -46,7 +46,7 @@ class RandomEventScreen(Screen):
     
     def continue_game(self):
         """Return to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
     
     def draw(self, surface):

@@ -8,8 +8,8 @@ It initializes the game and starts the main game loop.
 import pygame
 import sys
 import traceback
-from moneySmartz import Game, GUIManager
-from moneySmartz.screens import TitleScreen
+from moneySmarts import Game, GUIManager
+from moneySmarts.screens import TitleScreen
 
 # GUI Constants (keep only one set, remove duplicates)
 SCREEN_WIDTH = 1024

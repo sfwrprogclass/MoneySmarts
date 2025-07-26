@@ -1,9 +1,9 @@
 import pygame
 import random
 import os
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button, TextInput
-from moneySmartz.sound_manager import SoundManager
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button, TextInput
+from moneySmarts.sound_manager import SoundManager
 
 class TitleScreen(Screen):
     play_startup_music = True  # Enable music for this screen
@@ -108,7 +108,7 @@ class TitleScreen(Screen):
 
     def start_new_game(self):
         """Start a new game."""
-        from moneySmartz.screens.base_screens import NameInputScreen
+        from moneySmarts.screens.base_screens import NameInputScreen
         self.game.gui_manager.set_screen(NameInputScreen(self.game))
 
     def quit_game(self):
@@ -351,14 +351,14 @@ class NameInputScreen(Screen):
         """Start the game with the entered name."""
         name = self.name_input.text.strip()
         if name:
-            from moneySmartz.models import Player
+            from moneySmarts.models import Player
             self.game.player = Player(name)
-            from moneySmartz.screens.base_screens import IntroScreen
+            from moneySmarts.screens.base_screens import IntroScreen
             self.game.gui_manager.set_screen(IntroScreen(self.game))
 
     def go_back(self):
         """Go back to the title screen."""
-        from moneySmartz.screens.base_screens import TitleScreen
+        from moneySmarts.screens.base_screens import TitleScreen
         self.game.gui_manager.set_screen(TitleScreen(self.game))
 
     def draw(self, surface):
@@ -450,15 +450,15 @@ class IntroScreen(Screen):
 
     def open_bank_account(self):
         """Open a bank account and continue."""
-        from moneySmartz.models import BankAccount
+        from moneySmarts.models import BankAccount
         self.game.player.bank_account = BankAccount()
         self.game.player.bank_account.deposit(50)  # Parents give you $50 to start
-        from moneySmartz.screens.base_screens import DebitCardScreen
+        from moneySmarts.screens.base_screens import DebitCardScreen
         self.game.gui_manager.set_screen(DebitCardScreen(self.game))
 
     def skip_bank_account(self):
         """Skip opening a bank account and continue."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -580,14 +580,14 @@ class DebitCardScreen(Screen):
 
     def get_debit_card(self):
         """Get a debit card and continue."""
-        from moneySmartz.models import Card
+        from moneySmarts.models import Card
         self.game.player.debit_card = Card("Debit")
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def skip_debit_card(self):
         """Skip getting a debit card and continue."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):

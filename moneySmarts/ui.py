@@ -1,8 +1,8 @@
 import pygame
 import os
 from pygame.locals import *
-from moneySmartz.constants import *
-from moneySmartz.sound_manager import SoundManager
+from moneySmarts.constants import *
+from moneySmarts.sound_manager import SoundManager
 
 class Button:
     """
@@ -149,7 +149,7 @@ class GUIManager:
         """Load all sound assets"""
         # Get assets path relative to project root
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(current_dir)  # Go up to moneySmartz directory
+        root_dir = os.path.dirname(current_dir)  # Go up to moneySmarts directory
         assets_dir = os.path.join(root_dir, 'assets')
         
         # Load startup song

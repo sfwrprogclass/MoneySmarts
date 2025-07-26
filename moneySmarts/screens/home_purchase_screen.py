@@ -1,6 +1,6 @@
 import pygame
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button
 
 HOME_OPTIONS = [
     {"name": "Starter Home", "price": 3000, "desc": "A cozy starter home. Affordable and simple."},
@@ -42,7 +42,7 @@ class HomePurchaseScreen(Screen):
             self.message = "Not enough cash."
 
     def go_back(self):
-        from moneySmartz.screens.shop_screen import ShopScreen
+        from moneySmarts.screens.shop_screen import ShopScreen
         self.selected_home = None
         self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))

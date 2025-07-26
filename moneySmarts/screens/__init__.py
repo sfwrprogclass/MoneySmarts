@@ -6,7 +6,7 @@ organized by category.
 """
 
 # Base screens
-from moneySmartz.screens.base_screens import (
+from moneySmarts.screens.base_screens import (
     TitleScreen,
     NameInputScreen,
     IntroScreen,
@@ -15,7 +15,7 @@ from moneySmartz.screens.base_screens import (
 )
 
 # Financial screens
-from moneySmartz.screens.financial_screens import (
+from moneySmarts.screens.financial_screens import (
     BankAccountScreen,
     BankDetailsScreen,
     DepositScreen,
@@ -31,10 +31,10 @@ from moneySmartz.screens.financial_screens import (
 )
 
 # Game screen
-from moneySmartz.screens.game_screen import GameScreen
+from moneySmarts.screens.game_screen import GameScreen
 
 # Life event screens
-from moneySmartz.screens.life_event_screens import (
+from moneySmarts.screens.life_event_screens import (
     HighSchoolGraduationScreen,
     CollegeGraduationScreen,
     CarPurchaseScreen,
@@ -43,4 +43,4 @@ from moneySmartz.screens.life_event_screens import (
 )
 
 # Random event screens
-from moneySmartz.screens.random_event_screens import RandomEventScreen
+from moneySmarts.screens.random_event_screens import RandomEventScreen

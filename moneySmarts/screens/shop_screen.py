@@ -1,7 +1,7 @@
 import pygame
 
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button
 
 # Define the shop items with prices and descriptions
 WHITE = (255, 255, 255)
@@ -68,13 +68,13 @@ class ShopScreen(Screen):
         self.selected_item = SHOP_ITEMS[idx]
         # Only show a payment popup for items that are not Home or Vehicle
         if self.selected_item['name'] == "Home":
-            from moneySmartz.screens.home_purchase_screen import HomePurchaseScreen
+            from moneySmarts.screens.home_purchase_screen import HomePurchaseScreen
             self.game.gui_manager.set_screen(HomePurchaseScreen(self.game))
             self.selected_item = None
             self.show_payment_popup = False
             return
         if self.selected_item['name'] == "Vehicle":
-            from moneySmartz.screens.vehicle_purchase_screen import VehiclePurchaseScreen
+            from moneySmarts.screens.vehicle_purchase_screen import VehiclePurchaseScreen
             self.game.gui_manager.set_screen(VehiclePurchaseScreen(self.game))
             self.selected_item = None
             self.show_payment_popup = False
@@ -165,7 +165,7 @@ class ShopScreen(Screen):
         self.close_popup()
 
     def go_back(self):
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
         self.selected_item = None
         self.show_payment_popup = False

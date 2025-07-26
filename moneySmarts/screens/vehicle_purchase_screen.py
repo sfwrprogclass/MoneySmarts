@@ -1,6 +1,6 @@
 import pygame
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button
 
 VEHICLE_OPTIONS = [
     {"name": "Used Car", "price": 1200, "desc": "Reliable but basic transportation."},
@@ -87,7 +87,7 @@ class VehiclePurchaseScreen(Screen):
             self.message = "Credit score too low for financing."
 
     def go_back(self):
-        from moneySmartz.screens.shop_screen import ShopScreen
+        from moneySmarts.screens.shop_screen import ShopScreen
         self.selected_vehicle = None
         self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))

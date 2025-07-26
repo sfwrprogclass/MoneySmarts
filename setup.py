@@ -1,9 +1,9 @@
 from distutils.core import setup
 
 setup(
-    name='moneySmartz2',
+    name='moneySmarts',
     version='1.0',
-    packages=['moneySmartz', 'moneySmartz.screens'],
+    packages=['moneySmarts', 'moneySmarts.screens'],
     url='',
     license='',
     author='nicks',

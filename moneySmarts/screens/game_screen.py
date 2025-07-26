@@ -1,8 +1,8 @@
 import pygame
 import random
 from pygame.locals import *
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button
 
 class GameScreen(Screen):
     """
@@ -255,67 +255,67 @@ class GameScreen(Screen):
 
     def open_bank_account(self):
         """Open a bank account screen."""
-        from moneySmartz.screens.financial_screens import BankAccountScreen
+        from moneySmarts.screens.financial_screens import BankAccountScreen
         self.game.gui_manager.set_screen(BankAccountScreen(self.game))
 
     def view_bank_account(self):
         """View bank account details."""
-        from moneySmartz.screens.financial_screens import BankDetailsScreen
+        from moneySmarts.screens.financial_screens import BankDetailsScreen
         self.game.gui_manager.set_screen(BankDetailsScreen(self.game))
 
     def deposit_to_bank(self):
         """Deposit money to bank account."""
-        from moneySmartz.screens.financial_screens import DepositScreen
+        from moneySmarts.screens.financial_screens import DepositScreen
         self.game.gui_manager.set_screen(DepositScreen(self.game))
 
     def withdraw_from_bank(self):
         """Withdraw money from bank account."""
-        from moneySmartz.screens.financial_screens import WithdrawScreen
+        from moneySmarts.screens.financial_screens import WithdrawScreen
         self.game.gui_manager.set_screen(WithdrawScreen(self.game))
 
     def get_debit_card(self):
         """Get a debit card."""
-        from moneySmartz.screens.financial_screens import GetDebitCardScreen
+        from moneySmarts.screens.financial_screens import GetDebitCardScreen
         self.game.gui_manager.set_screen(GetDebitCardScreen(self.game))
 
     def apply_for_credit_card(self):
         """Apply for a credit card."""
-        from moneySmartz.screens.financial_screens import CreditCardScreen
+        from moneySmarts.screens.financial_screens import CreditCardScreen
         self.game.gui_manager.set_screen(CreditCardScreen(self.game))
 
     def view_credit_card(self):
         """View credit card details."""
-        from moneySmartz.screens.financial_screens import CreditCardDetailsScreen
+        from moneySmarts.screens.financial_screens import CreditCardDetailsScreen
         self.game.gui_manager.set_screen(CreditCardDetailsScreen(self.game))
 
     def pay_credit_card(self):
         """Make a payment on the credit card."""
-        from moneySmartz.screens.financial_screens import PayCreditCardScreen
+        from moneySmarts.screens.financial_screens import PayCreditCardScreen
         self.game.gui_manager.set_screen(PayCreditCardScreen(self.game))
 
     def view_loans(self):
         """View loan details."""
-        from moneySmartz.screens.financial_screens import LoanDetailsScreen
+        from moneySmarts.screens.financial_screens import LoanDetailsScreen
         self.game.gui_manager.set_screen(LoanDetailsScreen(self.game))
 
     def make_extra_loan_payment(self):
         """Make an extra payment on a loan."""
-        from moneySmartz.screens.financial_screens import ExtraLoanPaymentScreen
+        from moneySmarts.screens.financial_screens import ExtraLoanPaymentScreen
         self.game.gui_manager.set_screen(ExtraLoanPaymentScreen(self.game))
 
     def view_assets(self):
         """View asset details."""
-        from moneySmartz.screens.financial_screens import AssetDetailsScreen
+        from moneySmarts.screens.financial_screens import AssetDetailsScreen
         self.game.gui_manager.set_screen(AssetDetailsScreen(self.game))
 
     def look_for_job(self):
         """Look for a job or a better job."""
-        from moneySmartz.screens.financial_screens import JobSearchScreen
+        from moneySmarts.screens.financial_screens import JobSearchScreen
         self.game.gui_manager.set_screen(JobSearchScreen(self.game))
 
     def open_shop(self):
         """Open the shop screen."""
-        from moneySmartz.screens.shop_screen import ShopScreen
+        from moneySmarts.screens.shop_screen import ShopScreen
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
     def pause_game(self):

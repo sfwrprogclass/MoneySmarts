@@ -1,8 +1,8 @@
 import pygame
 import random
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button, TextInput
-from moneySmartz.models import BankAccount, Card, Loan, Asset
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button, TextInput
+from moneySmarts.models import BankAccount, Card, Loan, Asset
 
 class BankAccountScreen(Screen):
     """
@@ -97,10 +97,10 @@ class BankAccountScreen(Screen):
 
             # If checking account, offer debit card
             if self.selected_account_type == "Checking":
-                from moneySmartz.screens.base_screens import DebitCardScreen
+                from moneySmarts.screens.base_screens import DebitCardScreen
                 self.game.gui_manager.set_screen(DebitCardScreen(self.game))
             else:
-                from moneySmartz.screens.game_screen import GameScreen
+                from moneySmarts.screens.game_screen import GameScreen
                 self.game.gui_manager.set_screen(GameScreen(self.game))
         except ValueError:
             # Invalid input, do nothing
@@ -108,7 +108,7 @@ class BankAccountScreen(Screen):
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def handle_events(self, events):
@@ -204,7 +204,7 @@ class BankDetailsScreen(Screen):
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -359,7 +359,7 @@ class DepositScreen(Screen):
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def handle_events(self, events):
@@ -477,7 +477,7 @@ class WithdrawScreen(Screen):
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def handle_events(self, events):
@@ -556,12 +556,12 @@ class GetDebitCardScreen(Screen):
     def get_debit_card(self):
         """Get a debit card and go back to the game screen."""
         self.game.player.debit_card = Card("Debit")
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -643,7 +643,7 @@ class CreditCardScreen(Screen):
         self.check_eligibility()
 
     def go_back(self):
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def check_eligibility(self):
@@ -713,7 +713,7 @@ class CreditCardScreen(Screen):
         self.buttons.append(details_button)
 
     def view_card_details(self):
-        from moneySmartz.screens.financial_screens import CreditCardDetailsScreen
+        from moneySmarts.screens.financial_screens import CreditCardDetailsScreen
         self.game.gui_manager.set_screen(CreditCardDetailsScreen(self.game))
 
     def draw(self, surface):
@@ -850,7 +850,7 @@ class CreditCardDetailsScreen(Screen):
         self.game.gui_manager.set_screen(PayCreditCardScreen(self.game))
 
     def go_back(self):
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -1071,7 +1071,7 @@ class PayCreditCardScreen(Screen):
             self.status_color = RED
 
     def go_back(self):
-        from moneySmartz.screens.financial_screens import CreditCardDetailsScreen
+        from moneySmarts.screens.financial_screens import CreditCardDetailsScreen
         self.game.gui_manager.set_screen(CreditCardDetailsScreen(self.game))
 
     def handle_events(self, events):
@@ -1162,7 +1162,7 @@ class LoanDetailsScreen(Screen):
         self.game.gui_manager.set_screen(ExtraLoanPaymentScreen(self.game))
 
     def go_back(self):
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -1378,7 +1378,7 @@ class ExtraLoanPaymentScreen(Screen):
             self.status_color = RED
 
     def go_back(self):
-        from moneySmartz.screens.financial_screens import LoanDetailsScreen
+        from moneySmarts.screens.financial_screens import LoanDetailsScreen
         self.game.gui_manager.set_screen(LoanDetailsScreen(self.game))
 
     def handle_events(self, events):
@@ -1487,7 +1487,7 @@ class AssetDetailsScreen(Screen):
         self.buttons = [back_button]
 
     def go_back(self):
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -1740,7 +1740,7 @@ class JobSearchScreen(Screen):
 
     def go_back(self):
         """Go back to the game screen."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):

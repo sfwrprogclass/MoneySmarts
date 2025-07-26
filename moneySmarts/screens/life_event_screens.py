@@ -1,9 +1,9 @@
 import pygame
 import random
 from pygame.locals import *
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button, TextInput
-from moneySmartz.models import Loan, Asset, Card
+from moneySmarts.constants import *
+from moneySmarts.ui import Screen, Button, TextInput
+from moneySmarts.models import Loan, Asset, Card
 
 BROWN = (139, 69, 19)
 
@@ -77,7 +77,7 @@ class HighSchoolGraduationScreen(Screen):
         self.show_recurring_bill_popup("College Tuition", 20000 // 12)
 
         # Return to game screen
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def go_to_trade_school(self):
@@ -97,7 +97,7 @@ class HighSchoolGraduationScreen(Screen):
         self.show_recurring_bill_popup("Trade School Tuition", 10000 // 24)
 
         # Return to game screen
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def start_working(self):
@@ -106,7 +106,7 @@ class HighSchoolGraduationScreen(Screen):
         self.show_recurring_bill_popup("Rent", 800)
 
         # Go to job search screen
-        from moneySmartz.screens.financial_screens import JobSearchScreen
+        from moneySmarts.screens.financial_screens import JobSearchScreen
         self.game.gui_manager.set_screen(JobSearchScreen(self.game))
 
     def draw(self, surface):
@@ -215,7 +215,7 @@ class CollegeGraduationScreen(Screen):
         self.game.player.credit_score += 20  # Education boosts credit score
 
         # Go to job search screen
-        from moneySmartz.screens.financial_screens import JobSearchScreen
+        from moneySmarts.screens.financial_screens import JobSearchScreen
         self.game.gui_manager.set_screen(JobSearchScreen(self.game))
 
     def draw(self, surface):
@@ -405,12 +405,12 @@ class CarPurchaseScreen(Screen):
 
     def skip_purchase(self):
         """Skip car purchase."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def confirm_purchase(self):
         """Confirm purchase and return to game."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -660,12 +660,12 @@ class HousingScreen(Screen):
 
     def skip_purchase(self):
         """Skip house purchase."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def confirm_purchase(self):
         """Confirm purchase and return to game."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
@@ -895,12 +895,12 @@ class FamilyPlanningScreen(Screen):
 
     def skip_family(self):
         """Skip family planning for now."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def continue_to_game(self):
         """Continue to game after family planning."""
-        from moneySmartz.screens.game_screen import GameScreen
+        from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def draw(self, surface):
