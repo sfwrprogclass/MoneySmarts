@@ -1,4 +1,5 @@
 import pygame
+import os
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
 
@@ -13,7 +14,16 @@ class HomePurchaseScreen(Screen):
         super().__init__(game)
         self.selected_home = None
         self.message = ""
+        self.show_popup = False
+        self.popup_text = ""
         self.create_buttons()
+        # Load home images
+        assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
+        self.home_images = [
+            pygame.image.load(os.path.join(assets_dir, 'home_starter.png')).convert_alpha(),
+            pygame.image.load(os.path.join(assets_dir, 'home_family.png')).convert_alpha(),
+            pygame.image.load(os.path.join(assets_dir, 'home_luxury.png')).convert_alpha()
+        ]
 
     def create_buttons(self):
         self.buttons = []
@@ -33,10 +43,20 @@ class HomePurchaseScreen(Screen):
         if not self.selected_home:
             self.message = "Select a home first."
             return
-        if self.game.player.cash >= self.selected_home['price']:
-            self.game.player.cash -= self.selected_home['price']
+        price = self.selected_home['price']
+        cash_before = self.game.player.cash
+        if cash_before >= price:
+            self.game.player.cash -= price
+            cash_after = self.game.player.cash
             self.game.player.home = self.selected_home['name']
-            self.message = f"Congratulations! You bought the {self.selected_home['name']}!"
+            self.show_popup = True
+            self.popup_text = (
+                f"Purchase Confirmation:\n"
+                f"Before: ${cash_before:.2f}\n"
+                f"Purchase: -${price:.2f}\n"
+                f"After: ${cash_after:.2f}\n"
+                f"Congratulations! You bought the {self.selected_home['name']}!"
+            )
             self.selected_home = None
         else:
             self.message = "Not enough cash."
@@ -47,7 +67,51 @@ class HomePurchaseScreen(Screen):
         self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
+    def draw(self, surface):
+        surface.fill((220, 240, 255))  # Light blue background for home screen
+        font = pygame.font.SysFont('Arial', FONT_LARGE)
+        title = font.render("Choose Your Home", True, BLUE)
+        surface.blit(title, (80, 60))
+        font_small = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        y = 150
+        for idx, home in enumerate(HOME_OPTIONS):
+            # Draw home image
+            surface.blit(self.home_images[idx], (30, y))
+            desc = font_small.render(home['desc'], True, BLACK)
+            surface.blit(desc, (500, y+20))
+            y += 90
+        for btn in self.buttons:
+            btn.draw(surface)
+        self.buy_btn.draw(surface)
+        self.back_btn.draw(surface)
+        msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
+        surface.blit(msg, (80, 420))
+        # Draw popup if needed
+        if self.show_popup:
+            popup_rect = pygame.Rect(200, 180, 500, 220)
+            pygame.draw.rect(surface, (255, 255, 220), popup_rect)
+            pygame.draw.rect(surface, BLUE, popup_rect, 3)
+            lines = self.popup_text.split('\n')
+            for i, line in enumerate(lines):
+                line_surf = msg_font.render(line, True, BLACK)
+                surface.blit(line_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 35))
+            # Draw OK button
+            ok_btn_rect = pygame.Rect(popup_rect.x + 180, popup_rect.y + 160, 140, 40)
+            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            ok_text = msg_font.render("OK", True, WHITE)
+            surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
+            self.ok_btn_rect = ok_btn_rect
+        else:
+            self.ok_btn_rect = None
+
     def handle_event(self, event):
+        if self.show_popup and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.ok_btn_rect and self.ok_btn_rect.collidepoint(mouse_pos):
+                self.show_popup = False
+                self.popup_text = ""
+                return
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             for btn in self.buttons:
@@ -66,22 +130,3 @@ class HomePurchaseScreen(Screen):
         if event.type == pygame.KEYDOWN:
             if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
                 self.go_back()
-
-    def draw(self, surface):
-        surface.fill((220, 240, 255))  # Light blue background for home screen
-        font = pygame.font.SysFont('Arial', FONT_LARGE)
-        title = font.render("Choose Your Home", True, BLUE)
-        surface.blit(title, (80, 60))
-        font_small = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        y = 150
-        for home in HOME_OPTIONS:
-            desc = font_small.render(home['desc'], True, BLACK)
-            surface.blit(desc, (500, y+20))
-            y += 90
-        for btn in self.buttons:
-            btn.draw(surface)
-        self.buy_btn.draw(surface)
-        self.back_btn.draw(surface)
-        msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
-        surface.blit(msg, (80, 420))

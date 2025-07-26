@@ -215,6 +215,16 @@ class GameScreen(Screen):
         )
         self.buttons.append(shop_button)
 
+        # --- Inventory Button (update to open inventory screen) ---
+        inventory_button = Button(
+            SCREEN_WIDTH - 220,
+            SCREEN_HEIGHT - 120,
+            200, 50,
+            "View Inventory",
+            action=self.open_inventory
+        )
+        self.buttons.append(inventory_button)
+
     def continue_to_next_month(self):
         """Continue to the next month."""
         # Increment month
@@ -341,6 +351,10 @@ class GameScreen(Screen):
     def quit_game(self):
         """Quit the game and return to main menu or exit."""
         self.game.quit()
+
+    def open_inventory(self):
+        from moneySmarts.screens.inventory_screen import InventoryScreen
+        self.game.gui_manager.set_screen(InventoryScreen(self.game))
 
     def draw(self, surface):
         """Draw the game screen."""
