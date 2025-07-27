@@ -18,11 +18,10 @@ class VehiclePurchaseScreen(Screen):
         self.popup_text = ""
         self.create_buttons()
         # Load vehicle images
-        assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
         self.vehicle_images = [
-            pygame.image.load(os.path.join(assets_dir, 'vehicle_used_car.png')).convert_alpha(),
-            pygame.image.load(os.path.join(assets_dir, 'vehicle_sedan.png')).convert_alpha(),
-            pygame.image.load(os.path.join(assets_dir, 'vehicle_suv.png')).convert_alpha()
+            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_used_car.png')).convert_alpha(),
+            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_sedan.png')).convert_alpha(),
+            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_suv.png')).convert_alpha()
         ]
 
     def create_buttons(self):

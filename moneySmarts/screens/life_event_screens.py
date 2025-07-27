@@ -1,5 +1,6 @@
 import pygame
 import random
+import os
 from pygame.locals import *
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
@@ -18,6 +19,10 @@ class HighSchoolGraduationScreen(Screen):
         self.recurring_bill_message = None
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
         self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+
+        # Load pixel art assets
+        self.pixel_bg = pygame.image.load(os.path.join(ASSETS_DIR, 'Life-Event-Green.jpg')).convert()
+        self.pixel_cap = pygame.image.load(os.path.join(ASSETS_DIR, 'graduation_cap_pixel.png')).convert_alpha() if os.path.exists(os.path.join(ASSETS_DIR, 'graduation_cap_pixel.png')) else None
 
         # Buttons
         college_button = Button(
@@ -111,31 +116,36 @@ class HighSchoolGraduationScreen(Screen):
 
     def draw(self, surface):
         """Draw the high school graduation screen."""
-        # Background
-        surface.fill(WHITE)
+        # Draw pixel art background
+        surface.blit(pygame.transform.scale(self.pixel_bg, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0, 0))
 
         # Title
         title_surface = self.title_font.render("HIGH SCHOOL GRADUATION", True, BLUE)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
         surface.blit(title_surface, title_rect)
 
-        # Graduation cap image (simple triangle and rectangle)
-        cap_center_x = SCREEN_WIDTH // 2
-        cap_center_y = 180
+        # Draw pixel art graduation cap if available
+        if self.pixel_cap:
+            cap_rect = self.pixel_cap.get_rect(center=(SCREEN_WIDTH // 2, 220))  # Lowered from 180 to 220
+            surface.blit(self.pixel_cap, cap_rect)
+        else:
+            # Fallback: draw basic cap
+            cap_center_x = SCREEN_WIDTH // 2
+            cap_center_y = 220  # Lowered from 180 to 220
 
-        # Draw cap
-        pygame.draw.rect(surface, BLACK, (cap_center_x - 50, cap_center_y - 10, 100, 20))
+            # Draw cap
+            pygame.draw.rect(surface, BLACK, (cap_center_x - 50, cap_center_y - 10, 100, 20))
 
-        # Draw tassel
-        pygame.draw.line(surface, YELLOW, (cap_center_x + 40, cap_center_y), (cap_center_x + 60, cap_center_y + 30), 5)
-        pygame.draw.circle(surface, YELLOW, (cap_center_x + 60, cap_center_y + 40), 10)
+            # Draw tassel
+            pygame.draw.line(surface, YELLOW, (cap_center_x + 40, cap_center_y), (cap_center_x + 60, cap_center_y + 30), 5)
+            pygame.draw.circle(surface, YELLOW, (cap_center_x + 60, cap_center_y + 40), 10)
 
-        # Draw top
-        pygame.draw.polygon(surface, BLACK, [
-            (cap_center_x - 50, cap_center_y - 10),
-            (cap_center_x + 50, cap_center_y - 10),
-            (cap_center_x, cap_center_y - 60)
-        ])
+            # Draw top
+            pygame.draw.polygon(surface, BLACK, [
+                (cap_center_x - 50, cap_center_y - 10),
+                (cap_center_x + 50, cap_center_y - 10),
+                (cap_center_x, cap_center_y - 60)
+            ])
 
         # Explanation text
         text_lines = [
@@ -154,8 +164,9 @@ class HighSchoolGraduationScreen(Screen):
         ]
 
         for i, line in enumerate(text_lines):
-            text_surface = self.text_font.render(line, True, BLACK)
-            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 250 + i * 30))
+            # Use white font for better contrast
+            text_surface = self.text_font.render(line, True, WHITE)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 30))  # Lowered from 250 to 300
             surface.blit(text_surface, text_rect)
 
         # Draw buttons
@@ -171,7 +182,18 @@ class HighSchoolGraduationScreen(Screen):
             self.recurring_bill_btn.draw(surface)
 
     def handle_events(self, events):
-        # ...existing code...
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                for button in self.buttons:
+                    if button.rect.collidepoint(mouse_pos):
+                        if button.action:
+                            button.action()
+                            return
+        # Handle recurring bill popup
         if hasattr(self, 'show_recurring_bill') and self.show_recurring_bill:
             mouse_pos = pygame.mouse.get_pos()
             mouse_click = False
@@ -182,7 +204,6 @@ class HighSchoolGraduationScreen(Screen):
             if callable(action):
                 action()
                 return
-        # ...existing code...
 
 class CollegeGraduationScreen(Screen):
     """

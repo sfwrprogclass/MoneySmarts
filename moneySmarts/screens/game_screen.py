@@ -13,6 +13,14 @@ class GameScreen(Screen):
     def __init__(self, game):
         super().__init__(game)
         self.create_buttons()
+        self.show_utility_popup = False
+        self.utility_bills = [
+            {"name": "Electric", "min": 50, "max": 120},
+            {"name": "Internet", "min": 40, "max": 80},
+            {"name": "Water", "min": 25, "max": 60},
+            {"name": "Gas", "min": 20, "max": 70}
+        ]
+        self.current_utility_bill = None
 
     def create_buttons(self):
         """Create the buttons for the game screen."""
@@ -205,17 +213,7 @@ class GameScreen(Screen):
         )
         self.buttons.append(quit_button)
 
-        # --- Shop Button ---
-        shop_button = Button(
-            SCREEN_WIDTH - 220,
-            SCREEN_HEIGHT - 120,
-            200, 50,
-            "Shop",
-            action=self.open_shop
-        )
-        self.buttons.append(shop_button)
-
-        # --- Inventory Button (update to open inventory screen) ---
+        # --- Inventory Button (move to a different location and fix action) ---
         inventory_button = Button(
             SCREEN_WIDTH - 220,
             SCREEN_HEIGHT - 120,
@@ -224,6 +222,40 @@ class GameScreen(Screen):
             action=self.open_inventory
         )
         self.buttons.append(inventory_button)
+
+        # --- Shop Button ---
+        shop_button = Button(
+            SCREEN_WIDTH - 220,
+            SCREEN_HEIGHT - 180,
+            200, 50,
+            "Shop",
+            action=self.open_shop
+        )
+        self.buttons.append(shop_button)
+
+    def create_utility_popup_buttons(self):
+        self.utility_pay_btn = Button(SCREEN_WIDTH//2-120, SCREEN_HEIGHT//2+40, 100, 50, "Pay", action=self.pay_utility_bill)
+        self.utility_skip_btn = Button(SCREEN_WIDTH//2+20, SCREEN_HEIGHT//2+40, 100, 50, "Skip", action=self.skip_utility_bill)
+
+    def trigger_utility_popup(self):
+        self.current_utility_bill = random.choice(self.utility_bills)
+        self.utility_bill_amount = random.randint(self.current_utility_bill["min"], self.current_utility_bill["max"])
+        self.utility_popup_message = f"{self.current_utility_bill['name']} bill due: ${self.utility_bill_amount}. Pay now?"
+        self.create_utility_popup_buttons()
+        self.show_utility_popup = True
+
+    def pay_utility_bill(self):
+        if self.game.player.cash >= self.utility_bill_amount:
+            self.game.player.cash -= self.utility_bill_amount
+        self.show_utility_popup = False
+        self.create_buttons()
+
+    def skip_utility_bill(self):
+        # Utility shutoff chance if skipped
+        if random.random() < 0.5:  # 50% chance
+            self.game.end_game_gui("Your utilities were shut off due to non-payment. Game Over.")
+        self.show_utility_popup = False
+        self.create_buttons()
 
     def continue_to_next_month(self):
         """Continue to the next month."""
@@ -262,6 +294,9 @@ class GameScreen(Screen):
             else:
                 # Refresh buttons (in case player status changed)
                 self.create_buttons()
+
+        # Show utility bill popup every month
+        self.trigger_utility_popup()
 
     def open_bank_account(self):
         """Open a bank account screen."""
@@ -457,8 +492,35 @@ class GameScreen(Screen):
         for button in self.buttons:
             button.draw(surface)
 
+        # Draw utility bill popup if needed
+        if self.show_utility_popup:
+            pygame.draw.rect(surface, LIGHT_GRAY, (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//2-100, 400, 200))
+            font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+            msg_surface = font.render(self.utility_popup_message, True, BLACK)
+            msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2-30))
+            surface.blit(msg_surface, msg_rect)
+            self.utility_pay_btn.draw(surface)
+            self.utility_skip_btn.draw(surface)
+
     def draw_text(self, surface, text, x, y, is_title=False):
         """Helper method to draw text."""
         font = pygame.font.SysFont('Arial', FONT_LARGE if is_title else FONT_MEDIUM)
         text_surface = font.render(text, True, BLACK)
         surface.blit(text_surface, (x, y))
+
+    def handle_events(self, events):
+        """Handle events for the game screen."""
+        super().handle_events(events)
+        # Handle utility bill popup
+        if self.show_utility_popup:
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_click = False
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click = True
+            if self.utility_pay_btn.update(mouse_pos, mouse_click):
+                self.pay_utility_bill()
+                return
+            if self.utility_skip_btn.update(mouse_pos, mouse_click):
+                self.skip_utility_bill()
+                return

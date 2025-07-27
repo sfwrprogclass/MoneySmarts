@@ -1,3 +1,8 @@
+import os
+
+# Assets directory
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
+
 # Assets
 PIXEL_FONT = "pixelated_font.ttf"  # Name of your font file
 TITLE_IMAGE = "title_moneysmartz.png"  # Title image file name

@@ -1,10 +1,10 @@
-# Money Smartz: Financial Life Simulator
+# MoneySmarts: Financial Life Simulator
 
-A 2D graphical financial education game inspired by the classic Oregon Trail. This game simulates the financial journey of life, from your first bank account as a teenager to retirement.
+MoneySmarts is an educational and entertaining financial life simulator game. Players make real-world financial decisions, manage budgets, purchase homes and vehicles, handle life events, and learn about personal finance in a fun, interactive way.
 
 ## Game Overview
 
-In Money Smartz, you'll navigate the financial challenges and opportunities of life:
+In MoneySmarts, you'll navigate the financial challenges and opportunities of life:
 
 - Start as a high school student getting your first bank account
 - Make education decisions (college, trade school, or start working)
@@ -15,6 +15,16 @@ In Money Smartz, you'll navigate the financial challenges and opportunities of l
 - Start a family and handle the associated expenses
 - Deal with random life events (both positive and negative)
 - Save for retirement and build wealth
+
+## Features
+
+- Buy homes and vehicles with realistic financial constraints
+- Shop for everyday items and manage recurring bills
+- Experience random and planned life events
+- Track your cash, bank, and credit balances
+- Inventory and recurring bill management
+- Pixel art graphics and engaging UI
+- Save/load game progress
 
 ## How to Play
 
@@ -57,16 +67,16 @@ This game teaches important financial concepts:
 
 The project follows a modular architecture with the Model-View-Controller (MVC) pattern:
 
-- **Models** (`moneySmartz/models.py`): Data structures for game entities (Player, BankAccount, Card, Loan, Asset)
-- **Views** (`moneySmartz/ui.py` and `moneySmartz/screens/`): UI components and screen classes
-- **Controller** (`moneySmartz/game.py`): Game logic and state management
+- **Models** (`moneySmarts/models.py`): Data structures for game entities (Player, BankAccount, Card, Loan, Asset)
+- **Views** (`moneySmarts/ui.py` and `moneySmarts/screens/`): UI components and screen classes
+- **Controller** (`moneySmarts/game.py`): Game logic and state management
 
 ### Directory Structure:
 ```
 moneySmartz2/
 ├── docs/
 │   └── tasks.md         # Development tasks and roadmap
-├── moneySmartz/
+├── moneySmarts/
 │   ├── screens/         # Screen classes organized by category
 │   ├── __init__.py      # Package initialization
 │   ├── constants.py     # Game constants and configuration
@@ -89,6 +99,23 @@ This project is under active development. Current progress:
 - 📝 Documentation improvements ongoing
 - 🚧 Many features planned (see `docs/tasks.md`)
 
+## Getting Started
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Run the game:**
+   ```bash
+   python main.py
+   ```
+
+## Controls
+- Use your mouse to interact with buttons and menus
+- Keyboard shortcuts: ESC or Backspace to go back
+
+## Assets
+All game assets (images, sounds, fonts) are located in the `assets/` folder.
+
 ## How to Contribute
 
 Contributions are welcome! Here's how you can help:
@@ -108,5 +135,8 @@ Contributions are welcome! Here's how you can help:
 - Invest early for retirement
 - Don't buy more house than you can afford
 - Maintain good credit by paying bills on time
+
+## License
+This project is for educational purposes. See LICENSE for details.
 
 Enjoy your financial journey!

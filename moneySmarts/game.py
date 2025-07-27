@@ -5,6 +5,23 @@ from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
 from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
 from moneySmarts.screens.base_screens import EndGameScreen
 
+def tax_refund_effect():
+    return random.randint(100, 1000)
+def birthday_gift_effect():
+    return random.randint(20, 200)
+def found_money_effect():
+    return random.randint(5, 50)
+def bonus_effect(game):
+    return int(game.player.salary * random.uniform(0.01, 0.1)) if game.player.salary > 0 else 0
+def car_repair_effect(game):
+    return -random.randint(100, 2000) if any(a.asset_type == "Car" for a in game.player.assets) else 0
+def medical_bill_effect():
+    return -random.randint(50, 5000)
+def lost_wallet_effect(game):
+    return -min(50, game.player.cash)
+def phone_repair_effect():
+    return -random.randint(50, 300)
+
 class Game:
     """
     Main game class that manages the game state and logic.
@@ -23,16 +40,16 @@ class Game:
         # Define possible random events
         events = {
             "positive": [
-                {"name": "Tax Refund", "description": "You received a tax refund!", "cash_effect": lambda: random.randint(100, 1000)},
-                {"name": "Birthday Gift", "description": "You received money as a birthday gift!", "cash_effect": lambda: random.randint(20, 200)},
-                {"name": "Found Money", "description": "You found money on the ground!", "cash_effect": lambda: random.randint(5, 50)},
-                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": lambda: int(self.player.salary * random.uniform(0.01, 0.1)) if self.player.salary > 0 else 0},
+                {"name": "Tax Refund", "description": "You received a tax refund!", "cash_effect": tax_refund_effect},
+                {"name": "Birthday Gift", "description": "You received money as a birthday gift!", "cash_effect": birthday_gift_effect},
+                {"name": "Found Money", "description": "You found money on the ground!", "cash_effect": found_money_effect},
+                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": lambda: bonus_effect(self)},
             ],
             "negative": [
-                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": lambda: -random.randint(100, 2000) if any(a.asset_type == "Car" for a in self.player.assets) else 0},
-                {"name": "Medical Bill", "description": "You have unexpected medical expenses.", "cash_effect": lambda: -random.randint(50, 5000)},
-                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lambda: -min(50, self.player.cash)},
-                {"name": "Phone Repair", "description": "Your phone screen cracked.", "cash_effect": lambda: -random.randint(50, 300)},
+                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": lambda: car_repair_effect(self)},
+                {"name": "Medical Bill", "description": "You have unexpected medical expenses.", "cash_effect": medical_bill_effect},
+                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lambda: lost_wallet_effect(self)},
+                {"name": "Phone Repair", "description": "Your phone screen cracked.", "cash_effect": phone_repair_effect},
             ]
         }
         return events

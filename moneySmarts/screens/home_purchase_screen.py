@@ -85,19 +85,40 @@ class HomePurchaseScreen(Screen):
         self.buy_btn.draw(surface)
         self.back_btn.draw(surface)
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
-        surface.blit(msg, (80, 420))
+        # Show message as popup if not enough cash
+        if self.message == "Not enough cash.":
+            popup_rect = pygame.Rect(250, 250, 520, 160)
+            pygame.draw.rect(surface, (255, 220, 220), popup_rect)
+            pygame.draw.rect(surface, RED, popup_rect, 3)
+            msg = msg_font.render(self.message, True, RED)
+            surface.blit(msg, (popup_rect.x + 40, popup_rect.y + 40))
+            # Draw OK button centered at bottom of popup
+            ok_btn_width, ok_btn_height = 140, 40
+            ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
+            ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
+            ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
+            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            ok_text = msg_font.render("OK", True, WHITE)
+            surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
+            self.ok_btn_rect = ok_btn_rect
+            return  # Prevent drawing other popups/buttons
+        else:
+            msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
+            surface.blit(msg, (80, 420))
         # Draw popup if needed
         if self.show_popup:
-            popup_rect = pygame.Rect(200, 180, 500, 220)
+            popup_rect = pygame.Rect(200, 180, 500, 280)
             pygame.draw.rect(surface, (255, 255, 220), popup_rect)
             pygame.draw.rect(surface, BLUE, popup_rect, 3)
             lines = self.popup_text.split('\n')
             for i, line in enumerate(lines):
                 line_surf = msg_font.render(line, True, BLACK)
                 surface.blit(line_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 35))
-            # Draw OK button
-            ok_btn_rect = pygame.Rect(popup_rect.x + 180, popup_rect.y + 160, 140, 40)
+            # Draw OK button centered at bottom of popup
+            ok_btn_width, ok_btn_height = 140, 40
+            ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
+            ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
+            ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
             pygame.draw.rect(surface, GREEN, ok_btn_rect)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
@@ -106,11 +127,13 @@ class HomePurchaseScreen(Screen):
             self.ok_btn_rect = None
 
     def handle_event(self, event):
-        if self.show_popup and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        # Handle OK button for both popups
+        if (self.show_popup or self.message == "Not enough cash.") and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             if self.ok_btn_rect and self.ok_btn_rect.collidepoint(mouse_pos):
                 self.show_popup = False
                 self.popup_text = ""
+                self.message = ""
                 return
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()

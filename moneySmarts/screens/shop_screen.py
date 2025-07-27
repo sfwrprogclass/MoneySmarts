@@ -37,6 +37,8 @@ class ShopScreen(Screen):
         self.selected_item = None
         self.message = ""
         self.show_payment_popup = False
+        self.show_confirmation_popup = False
+        self.confirmation_text = ""
         self.buttons = []
         self.create_buttons()
         self.create_payment_buttons()
@@ -93,83 +95,85 @@ class ShopScreen(Screen):
         if not self.selected_item:
             self.message = "Select an item first."
             return
-        # Special logic for buying a home
-        if self.selected_item['name'] == "Home":
-            if self.game.player.cash >= self.selected_item['price']:
-                self.game.player.cash -= self.selected_item['price']
-                self.game.player.inventory.append(self.selected_item['name'])
-                self.game.player.has_home = True
-                self.message = "Congratulations! You bought a home and unlocked a new chapter!"
-            else:
-                self.message = "Not enough cash to buy a home."
-            self.close_popup()
-            return
-        if self.game.player.cash >= self.selected_item['price']:
-            self.game.player.cash -= self.selected_item['price']
+        price = self.selected_item['price']
+        cash_before = self.game.player.cash
+        if cash_before >= price:
+            self.game.player.cash -= price
+            cash_after = self.game.player.cash
             self.game.player.inventory.append(self.selected_item['name'])
             if 'recurring' in self.selected_item:
                 self.game.player.recurring_bills.append(self.selected_item['recurring'])
-            self.message = f"Bought {self.selected_item['name']} with cash!"
+            self.confirmation_text = (
+                f"Purchase Confirmation:\n"
+                f"Before: ${cash_before:.2f}\n"
+                f"Purchase: -${price:.2f}\n"
+                f"After: ${cash_after:.2f}\n"
+                f"Bought {self.selected_item['name']} with cash!"
+            )
+            self.show_payment_popup = False
+            self.show_confirmation_popup = True
         else:
             self.message = "Not enough cash."
-        self.close_popup()
+            self.close_popup()
 
     def pay_bank(self):
         if not self.selected_item:
             self.message = "Select an item first."
             return
-        if self.selected_item['name'] == "Home":
-            acct = self.game.player.bank_account
-            if acct and acct.balance >= self.selected_item['price']:
-                acct.withdraw(self.selected_item['price'])
-                self.game.player.inventory.append(self.selected_item['name'])
-                self.game.player.has_home = True
-                self.message = "Congratulations! You bought a home and unlocked a new chapter!"
-            else:
-                self.message = "Not enough in bank account to buy a home."
-            self.close_popup()
-            return
         acct = self.game.player.bank_account
-        if acct and acct.balance >= self.selected_item['price']:
-            acct.withdraw(self.selected_item['price'])
+        price = self.selected_item['price']
+        bank_before = acct.balance if acct else 0
+        if acct and acct.balance >= price:
+            acct.withdraw(price)
+            bank_after = acct.balance
             self.game.player.inventory.append(self.selected_item['name'])
             if 'recurring' in self.selected_item:
                 self.game.player.recurring_bills.append(self.selected_item['recurring'])
-            self.message = f"Bought {self.selected_item['name']} from bank!"
+            self.confirmation_text = (
+                f"Purchase Confirmation:\n"
+                f"Bank Before: ${bank_before:.2f}\n"
+                f"Purchase: -${price:.2f}\n"
+                f"Bank After: ${bank_after:.2f}\n"
+                f"Bought {self.selected_item['name']} from bank!"
+            )
+            self.show_payment_popup = False
+            self.show_confirmation_popup = True
         else:
             self.message = "Not enough in bank account."
-        self.close_popup()
+            self.close_popup()
 
     def pay_credit(self):
         if not self.selected_item:
             self.message = "Select an item first."
             return
-        if self.selected_item['name'] == "Home":
-            card = self.game.player.credit_card
-            if card and card.charge(self.selected_item['price']):
-                self.game.player.inventory.append(self.selected_item['name'])
-                self.game.player.has_home = True
-                self.message = "Congratulations! You bought a home and unlocked a new chapter!"
-            else:
-                self.message = "Not enough credit or no card to buy a home."
-            self.close_popup()
-            return
         card = self.game.player.credit_card
-        if card and card.charge(self.selected_item['price']):
+        price = self.selected_item['price']
+        credit_before = card.balance if card else 0
+        if card and card.charge(price):
+            credit_after = card.balance
             self.game.player.inventory.append(self.selected_item['name'])
             if 'recurring' in self.selected_item:
                 self.game.player.recurring_bills.append(self.selected_item['recurring'])
-            self.message = f"Bought {self.selected_item['name']} on credit!"
+            self.confirmation_text = (
+                f"Purchase Confirmation:\n"
+                f"Credit Before: ${credit_before:.2f}\n"
+                f"Purchase: -${price:.2f}\n"
+                f"Credit After: ${credit_after:.2f}\n"
+                f"Bought {self.selected_item['name']} on credit!"
+            )
+            self.show_payment_popup = False
+            self.show_confirmation_popup = True
         else:
             self.message = "Not enough credit or no card."
-        self.close_popup()
+            self.close_popup()
 
     def go_back(self):
+        self.show_payment_popup = False
+        self.show_confirmation_popup = False
+        self.selected_item = None
+        self.message = ""
         from moneySmarts.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
-        self.selected_item = None
-        self.show_payment_popup = False
-        self.message = ""
 
     def show_inventory_popup(self):
         self.show_inventory = True
@@ -187,6 +191,16 @@ class ShopScreen(Screen):
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_click = True
+        # Confirmation popup OK button
+        if self.show_confirmation_popup and self.ok_btn_rect:
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self.ok_btn_rect.collidepoint(mouse_pos):
+                        self.show_confirmation_popup = False
+                        self.confirmation_text = ""
+                        self.selected_item = None
+                        self.game.gui_manager.set_screen(ShopScreen(self.game))
+                        return
         if self.show_payment_popup:
             # Only handle payment popup buttons
             for btn in [self.pay_cash_btn, self.pay_bank_btn, self.pay_credit_btn, self.popup_back_btn]:
@@ -244,8 +258,26 @@ class ShopScreen(Screen):
         if self.main_back_btn:
             self.main_back_btn.draw(surface)
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
-        surface.blit(msg, (60, 680))
+        # Show message as popup if not enough funds
+        if self.message and ("Not enough cash" in self.message or "Not enough in bank account" in self.message or "Not enough credit" in self.message or "Not enough funds" in self.message):
+            popup_rect = pygame.Rect(250, 250, 520, 160)
+            pygame.draw.rect(surface, (255, 220, 220), popup_rect)
+            pygame.draw.rect(surface, RED, popup_rect, 3)
+            msg = msg_font.render(self.message, True, RED)
+            surface.blit(msg, (popup_rect.x + 40, popup_rect.y + 40))
+            # Draw OK button centered at bottom of popup
+            ok_btn_width, ok_btn_height = 140, 40
+            ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
+            ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
+            ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
+            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            ok_text = msg_font.render("OK", True, WHITE)
+            surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
+            self.ok_btn_rect = ok_btn_rect
+            return  # Prevent drawing other popups/buttons
+        else:
+            msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
+            surface.blit(msg, (60, 680))
         if self.selected_item:
             sel_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
             sel_msg = sel_font.render(f"Selected: {self.selected_item['name']}", True, BLACK)
@@ -277,3 +309,38 @@ class ShopScreen(Screen):
                 item_rect = item_surface.get_rect(left=SCREEN_WIDTH // 2 - 180, top=SCREEN_HEIGHT // 2 - 80 + i * 30)
                 surface.blit(item_surface, item_rect)
             self.inventory_popup_btn.draw(surface)
+        # Draw confirmation popup if needed
+        if self.show_confirmation_popup:
+            msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+            popup_rect = pygame.Rect(200, 180, 500, 280)  # Increased height for more space
+            pygame.draw.rect(surface, (255, 255, 220), popup_rect)
+            pygame.draw.rect(surface, BLUE, popup_rect, 3)
+            lines = self.confirmation_text.split('\n')
+            for i, line in enumerate(lines):
+                line_surf = msg_font.render(line, True, BLACK)
+                surface.blit(line_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 35))
+            # Draw OK button centered at bottom of popup
+            ok_btn_width, ok_btn_height = 140, 40
+            ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
+            ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
+            ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
+            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            ok_text = msg_font.render("OK", True, WHITE)
+            surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
+            self.ok_btn_rect = ok_btn_rect
+            return  # Prevent drawing other popups/buttons
+        else:
+            self.ok_btn_rect = None
+
+    def handle_event(self, event):
+        # Handle OK button for insufficient funds popup and confirmation popup
+        if (self.show_confirmation_popup or (self.message and ("Not enough cash" in self.message or "Not enough in bank account" in self.message or "Not enough credit" in self.message or "Not enough funds" in self.message))) and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.ok_btn_rect and self.ok_btn_rect.collidepoint(mouse_pos):
+                self.show_confirmation_popup = False
+                self.confirmation_text = ""
+                self.selected_item = None
+                self.message = ""
+                self.game.gui_manager.set_screen(ShopScreen(self.game))
+                return
+        super().handle_event(event)
