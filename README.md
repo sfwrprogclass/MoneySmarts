@@ -1,10 +1,10 @@
-# Money Smartz: Financial Life Simulator
+# Money Smarts: Financial Life Simulator
 
 A 2D graphical financial education game inspired by the classic Oregon Trail. This game simulates the financial journey of life, from your first bank account as a teenager to retirement.
 
 ## Game Overview
 
-In Money Smartz, you'll navigate the financial challenges and opportunities of life:
+In Money Smarts, you'll navigate the financial challenges and opportunities of life:
 
 - Start as a high school student getting your first bank account
 - Make education decisions (college, trade school, or start working)
