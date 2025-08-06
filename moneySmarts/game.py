@@ -22,10 +22,17 @@ def lost_wallet_effect(game):
 def phone_repair_effect():
     return -random.randint(50, 300)
 
+class GameSaveError(Exception):
+    """Custom exception for game save/load errors."""
+    pass
+
 class Game:
     """
     Main game class that manages the game state and logic.
+    Handles player progression, events, finances, and game persistence.
     """
+    SAVE_VERSION = 1  # Increment this if save file structure changes
+
     def __init__(self):
         self.player = None
         self.current_month = 1
@@ -60,8 +67,7 @@ class Game:
         print("=" * 60)
         print("WELCOME TO MONEY SMARTZ: THE FINANCIAL LIFE SIMULATOR")
         print("=" * 60)
-        print("\nInspired by the classic Oregon Trail, this game will take you")
-        print("through the financial journey of life, from your first bank account")
+        print("This game will take you through the financial journey of life, from your first bank account")
         print("to retirement, with all the ups and downs along the way.")
         print("\nMake wise financial decisions and see how they affect your life!")
         print("\n" + "=" * 60)
@@ -1568,27 +1574,44 @@ class Game:
         self.paused = False
 
     def save_state(self, filename="savegame.dat"):
-        """Save the current game state to a file."""
+        """
+        Save the current game state to a file with versioning and error handling.
+        Args:
+            filename (str): The file to save the game state to.
+        Raises:
+            GameSaveError: If saving fails.
+        """
         import pickle
-        with open(filename, "wb") as f:
-            pickle.dump(self, f)
+        try:
+            with open(filename, "wb") as f:
+                pickle.dump({
+                    'version': self.SAVE_VERSION,
+                    'game': self
+                }, f)
+        except Exception as e:
+            raise GameSaveError(f"Failed to save game: {e}")
 
     def load_state(self, filename="savegame.dat"):
-        """Load the game state from a file, with error handling for empty/corrupt files."""
+        """
+        Load the game state from a file, with error handling for empty/corrupt files and versioning.
+        Args:
+            filename (str): The file to load the game state from.
+        Raises:
+            GameSaveError: If loading fails or version mismatch.
+        """
         import pickle
         import os
         if not os.path.exists(filename):
-            print(f"Save file '{filename}' does not exist.")
-            return
-        if os.path.getsize(filename) == 0:
-            print(f"Save file '{filename}' is empty. Cannot load game state.")
-            return
+            raise GameSaveError(f"Save file '{filename}' does not exist.")
         try:
             with open(filename, "rb") as f:
-                loaded_game = pickle.load(f)
-            self.__dict__.update(loaded_game.__dict__)
+                data = pickle.load(f)
+                if 'version' not in data or data['version'] != self.SAVE_VERSION:
+                    raise GameSaveError("Save file version mismatch or missing version.")
+                loaded_game = data['game']
+                self.__dict__.update(loaded_game.__dict__)
         except Exception as e:
-            print(f"Error loading game: {e}")
+            raise GameSaveError(f"Failed to load game: {e}")
 
     def quit(self):
         """Quit the game (for GUI mode)."""
