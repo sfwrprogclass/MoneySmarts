@@ -37,6 +37,10 @@ class GameScreen(Screen):
         )
         self.buttons.append(continue_button)
 
+        # Check if player exists before creating player-specific buttons
+        if not self.game.player:
+            return
+
         # Banking buttons
         if not self.game.player.bank_account:
             bank_button = Button(
@@ -259,6 +263,10 @@ class GameScreen(Screen):
 
     def continue_to_next_month(self):
         """Continue to the next month."""
+        # Check if player exists before processing
+        if not self.game.player:
+            return
+            
         # Increment month
         self.game.current_month += 1
         if self.game.current_month > 12:
@@ -404,6 +412,17 @@ class GameScreen(Screen):
         title_surface = title_font.render(f"MONTH: {self.game.current_month}/YEAR: {self.game.current_year + 2023}", True, WHITE)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 25))
         surface.blit(title_surface, title_rect)
+
+        # Check if player exists before drawing player info
+        if not self.game.player:
+            no_player_text = title_font.render("Please start a new game", True, WHITE)
+            no_player_rect = no_player_text.get_rect(center=(SCREEN_WIDTH // 2, 55))
+            surface.blit(no_player_text, no_player_rect)
+            
+            # Draw buttons (only continue button will be present)
+            for button in self.buttons:
+                button.draw(surface)
+            return
 
         age_surface = title_font.render(f"AGE: {self.game.player.age}", True, WHITE)
         age_rect = age_surface.get_rect(center=(SCREEN_WIDTH // 2, 55))
