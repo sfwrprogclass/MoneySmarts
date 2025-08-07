@@ -9,7 +9,23 @@ import pygame
 import sys
 import traceback
 from moneySmarts import Game, GUIManager
-from moneySmarts.screens import TitleScreen
+from moneySmarts.screens import GameScreen, TitleScreen, CreditCardScreen
+from moneySmarts.screens.base_screens import NameInputScreen, IntroScreen
+from moneySmarts.screens.financial_screens import (
+    BankAccountScreen, BankDetailsScreen, DepositScreen, WithdrawScreen,
+    GetDebitCardScreen, CreditCardDetailsScreen, PayCreditCardScreen,
+    LoanDetailsScreen, ExtraLoanPaymentScreen, AssetDetailsScreen,
+    JobSearchScreen
+)
+from moneySmarts.screens.life_event_screens import (
+    HighSchoolGraduationScreen, CollegeGraduationScreen,
+    CarPurchaseScreen, HousingScreen, FamilyPlanningScreen
+)
+from moneySmarts.screens.random_event_screens import RandomEventScreen
+from moneySmarts.screens.shop_screen import ShopScreen
+from moneySmarts.screens.inventory_screen import InventoryScreen
+from moneySmarts.screens.home_purchase_screen import HomePurchaseScreen
+from moneySmarts.screens.vehicle_purchase_screen import VehiclePurchaseScreen
 
 # GUI Constants (keep only one set, remove duplicates)
 SCREEN_WIDTH = 1024

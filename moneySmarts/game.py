@@ -737,9 +737,13 @@ class Game:
             actions.append("View bank account")
             actions.append("Deposit to bank")
             actions.append("Withdraw from bank")
-
-            if not self.player.debit_card:
-                actions.append("Get a debit card")
+            # Show savings account actions if player has one
+            if self.player.savings_account:
+                actions.append("View savings account")  # New action
+                actions.append("Withdraw from savings")  # New action
+            # If player has a checking but no savings, offer to open savings
+            elif self.player.bank_account and self.player.bank_account.account_type == "Checking":
+                actions.append("Open a savings account")
 
         # Credit actions
         if not self.player.credit_card and self.player.age >= 18:
@@ -806,31 +810,57 @@ class Game:
             self.view_assets()
         elif action == "Look for a job" or action == "Look for a better job":
             self.look_for_job()
+        elif action == "View savings account":  # New action
+            self.view_savings_account()
+        elif action == "Withdraw from savings":  # New action
+            self.withdraw_from_savings()
+        elif action == "Open a savings account":
+            self.open_savings_account()
 
         # After action, show status again and get another action
         self.display_status()
         self.get_player_action()
 
     def open_bank_account(self):
-        """Open a bank account."""
+        """Open a bank account, with option to open both checking and savings."""
         self.clear_screen()
         print("\n" + "=" * 60)
         print("OPEN A BANK ACCOUNT")
         print("=" * 60)
 
-        print("\nYou can open a checking account for everyday transactions")
-        print("or a savings account that earns interest.")
+        print("\nYou can open a checking account for everyday transactions\nor a savings account that earns interest.")
 
         account_type = self.get_choice("What type of account would you like to open?", ["Checking", "Savings"])
 
-        self.player.bank_account = BankAccount(account_type)
+        if account_type == "Checking":
+            self.player.bank_account = BankAccount("Checking")
+            print(f"\nCongratulations! You've opened a Checking account.")
+            # Offer to open a savings account as well
+            open_savings = self.get_choice("Would you also like to open a savings account?", ["Yes", "No"])
+            if open_savings == "Yes":
+                self.player.savings_account = BankAccount("Savings")
+                print(f"\nYou've also opened a Savings account. It will earn {self.player.savings_account.interest_rate*100:.1f}% interest annually.")
+                # Initial deposit for savings
+                savings_deposit = 0
+                while savings_deposit <= 0:
+                    try:
+                        savings_deposit = float(input("\nHow much would you like to deposit into savings initially? $"))
+                        if savings_deposit <= 0:
+                            print("Please enter a positive amount.")
+                        elif savings_deposit > self.player.cash:
+                            print("You don't have that much cash.")
+                            savings_deposit = 0
+                    except ValueError:
+                        print("Please enter a valid number.")
+                self.player.cash -= savings_deposit
+                self.player.savings_account.deposit(savings_deposit)
+                print(f"\nYou've deposited ${savings_deposit:.2f} into your new savings account.")
+                print(f"Your savings account balance is ${self.player.savings_account.balance:.2f}.")
+        else:
+            self.player.bank_account = BankAccount("Savings")
+            print(f"\nCongratulations! You've opened a Savings account. It will earn {self.player.bank_account.interest_rate*100:.1f}% interest annually.")
 
-        print(f"\nCongratulations! You've opened a {account_type} account.")
-
-        if account_type == "Savings":
-            print(f"Your account will earn {self.player.bank_account.interest_rate*100:.1f}% interest annually.")
-
-        # Initial deposit
+        # Initial deposit for main account
         deposit = 0
         while deposit <= 0:
             try:
@@ -842,10 +872,8 @@ class Game:
                     deposit = 0
             except ValueError:
                 print("Please enter a valid number.")
-
         self.player.cash -= deposit
         self.player.bank_account.deposit(deposit)
-
         print(f"\nYou've deposited ${deposit:.2f} into your new account.")
         print(f"Your account balance is ${self.player.bank_account.balance:.2f}.")
 
@@ -1006,9 +1034,6 @@ class Game:
         credit_limit = base_limit * limit_multiplier
 
         # Round to nearest $100
-        credit_limit = round(credit_limit / 100) * 100
-
-        # Minimum $500, maximum $50,000
         credit_limit = max(500, min(50000, credit_limit))
 
         print(f"\nBased on your credit score of {self.player.credit_score} and income of ${self.player.salary}/year,")
@@ -1573,15 +1598,18 @@ class Game:
         """Resume the game from pause (for GUI mode)."""
         self.paused = False
 
-    def save_state(self, filename="savegame.dat"):
+    def save_state(self, slot=1):
         """
-        Save the current game state to a file with versioning and error handling.
+        Save the current game state to one of three save slots with versioning and error handling.
         Args:
-            filename (str): The file to save the game state to.
+            slot (int): The save slot number (1, 2, or 3).
         Raises:
-            GameSaveError: If saving fails.
+            GameSaveError: If saving fails or slot is invalid.
         """
         import pickle
+        if slot not in (1, 2, 3):
+            raise GameSaveError(f"Invalid save slot: {slot}. Must be 1, 2, or 3.")
+        filename = f"savegame_slot{slot}.dat"
         try:
             with open(filename, "wb") as f:
                 pickle.dump({
@@ -1591,16 +1619,19 @@ class Game:
         except Exception as e:
             raise GameSaveError(f"Failed to save game: {e}")
 
-    def load_state(self, filename="savegame.dat"):
+    def load_state(self, slot=1):
         """
-        Load the game state from a file, with error handling for empty/corrupt files and versioning.
+        Load the game state from one of three save slots, with error handling for empty/corrupt files and versioning.
         Args:
-            filename (str): The file to load the game state from.
+            slot (int): The save slot number (1, 2, or 3).
         Raises:
-            GameSaveError: If loading fails or version mismatch.
+            GameSaveError: If loading fails, slot is invalid, or version mismatch.
         """
         import pickle
         import os
+        if slot not in (1, 2, 3):
+            raise GameSaveError(f"Invalid load slot: {slot}. Must be 1, 2, or 3.")
+        filename = f"savegame_slot{slot}.dat"
         if not os.path.exists(filename):
             raise GameSaveError(f"Save file '{filename}' does not exist.")
         try:
@@ -1620,3 +1651,97 @@ class Game:
         if self.gui_manager:
             self.gui_manager.running = False
         sys.exit()
+
+    def view_savings_account(self):
+        """View savings account details, including interest earned and total balance."""
+        self.clear_screen()
+        print("\n" + "=" * 60)
+        print("SAVINGS ACCOUNT DETAILS")
+        print("=" * 60)
+        if not self.player.bank_account or self.player.bank_account.account_type != "Savings":
+            print("\nYou do not have a savings account.")
+            input("\nPress Enter to continue...")
+            return
+        print(f"\nCurrent Balance: ${self.player.bank_account.balance:.2f}")
+        print(f"Interest Rate: {self.player.bank_account.interest_rate*100:.2f}% annually")
+        # Calculate total interest earned
+        total_interest = sum(t["amount"] for t in self.player.bank_account.transaction_history if t["type"] == "interest")
+        print(f"Total Interest Earned: ${total_interest:.2f}")
+        # Show recent transactions
+        if self.player.bank_account.transaction_history:
+            print("\nRecent Transactions:")
+            for i, transaction in enumerate(reversed(self.player.bank_account.transaction_history[-5:])):
+                if transaction["type"] == "deposit":
+                    print(f"  Deposit: +${transaction['amount']:.2f}")
+                elif transaction["type"] == "withdrawal":
+                    print(f"  Withdrawal: -${transaction['amount']:.2f}")
+                elif transaction["type"] == "interest":
+                    print(f"  Interest: +${transaction['amount']:.2f}")
+        input("\nPress Enter to continue...")
+
+    def withdraw_from_savings(self):
+        """Withdraw money from savings account."""
+        self.clear_screen()
+        print("\n" + "=" * 60)
+        print("WITHDRAW FROM SAVINGS ACCOUNT")
+        print("=" * 60)
+        if not self.player.bank_account or self.player.bank_account.account_type != "Savings":
+            print("\nYou do not have a savings account.")
+            input("\nPress Enter to continue...")
+            return
+        print(f"\nYour current savings balance: ${self.player.bank_account.balance:.2f}")
+        withdrawal = 0
+        while withdrawal <= 0:
+            try:
+                withdrawal = float(input("\nHow much would you like to withdraw? $"))
+                if withdrawal <= 0:
+                    print("Please enter a positive amount.")
+                elif withdrawal > self.player.bank_account.balance:
+                    print("You don't have that much in your savings account.")
+                    withdrawal = 0
+            except ValueError:
+                print("Please enter a valid number.")
+        self.player.bank_account.withdraw(withdrawal)
+        self.player.cash += withdrawal
+        print(f"\nYou've withdrawn ${withdrawal:.2f} from your savings account.")
+        print(f"Your new savings balance is ${self.player.bank_account.balance:.2f}.")
+        print(f"Your cash is now ${self.player.cash:.2f}.")
+        input("\nPress Enter to continue...")
+
+    def open_savings_account(self):
+        """Open a savings account."""
+        self.clear_screen()
+        print("\n" + "=" * 60)
+        print("OPEN A SAVINGS ACCOUNT")
+        print("=" * 60)
+
+        if self.player.savings_account:
+            print("\nYou already have a savings account.")
+            input("\nPress Enter to continue...")
+            return
+
+        print("\nA savings account earns interest on your balance.")
+        print("There is no monthly fee for this account.")
+
+        self.player.savings_account = BankAccount("Savings")
+        print("\nCongratulations! You've opened a savings account.")
+
+        # Initial deposit
+        deposit = 0
+        while deposit <= 0:
+            try:
+                deposit = float(input("\nHow much would you like to deposit initially? $"))
+                if deposit <= 0:
+                    print("Please enter a positive amount.")
+                elif deposit > self.player.cash:
+                    print("You don't have that much cash.")
+                    deposit = 0
+            except ValueError:
+                print("Please enter a valid number.")
+        self.player.cash -= deposit
+        self.player.savings_account.deposit(deposit)
+        print(f"\nYou've deposited ${deposit:.2f} into your new savings account.")
+        print(f"Your savings account balance is ${self.player.savings_account.balance:.2f}.")
+
+        input("\nPress Enter to continue...")
+

@@ -44,3 +44,9 @@ from moneySmarts.screens.life_event_screens import (
 
 # Random event screens
 from moneySmarts.screens.random_event_screens import RandomEventScreen
+
+# Shop and inventory screens
+from moneySmarts.screens.shop_screen import ShopScreen
+from moneySmarts.screens.inventory_screen import InventoryScreen
+from moneySmarts.screens.home_purchase_screen import HomePurchaseScreen
+from moneySmarts.screens.vehicle_purchase_screen import VehiclePurchaseScreen

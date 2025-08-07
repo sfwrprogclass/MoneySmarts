@@ -13,6 +13,7 @@ class Player:
         self.salary = 0
         self.cash = 100  # Start with $100 cash
         self.bank_account = None
+        self.savings_account = None  # Add this line for savings account support
         self.debit_card = None
         self.credit_card = None
         self.credit_score = 650  # Average starting credit score
