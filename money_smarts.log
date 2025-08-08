@@ -11,3 +11,25 @@ Traceback (most recent call last):
   File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 388, in quit_game
     self.game.quit()
 AttributeError: 'Game' object has no attribute 'quit'
+2025-08-07 21:17:18,250 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\game.py", line 1615, in save_state
+    pickle.dump({
+AttributeError: Can't pickle local object 'Game.initialize_events.<locals>.<lambda>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 199, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 532, in handle_events
+    super().handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 126, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 386, in save_game
+    self.game.save_state()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\game.py", line 1620, in save_state
+    raise GameSaveError(f"Failed to save game: {e}")
+moneySmarts.game.GameSaveError: Failed to save game: Can't pickle local object 'Game.initialize_events.<locals>.<lambda>'

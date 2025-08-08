@@ -1,9 +1,11 @@
 import random
 import time
 import os
+import pickle
 from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
 from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
 from moneySmarts.screens.base_screens import EndGameScreen
+from moneySmarts.exceptions import GameSaveError
 
 def tax_refund_effect():
     return random.randint(100, 1000)
@@ -21,10 +23,6 @@ def lost_wallet_effect(game):
     return -min(50, game.player.cash)
 def phone_repair_effect():
     return -random.randint(50, 300)
-
-class GameSaveError(Exception):
-    """Custom exception for game save/load errors."""
-    pass
 
 class Game:
     """
@@ -50,12 +48,12 @@ class Game:
                 {"name": "Tax Refund", "description": "You received a tax refund!", "cash_effect": tax_refund_effect},
                 {"name": "Birthday Gift", "description": "You received money as a birthday gift!", "cash_effect": birthday_gift_effect},
                 {"name": "Found Money", "description": "You found money on the ground!", "cash_effect": found_money_effect},
-                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": lambda: bonus_effect(self)},
+                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": bonus_effect},
             ],
             "negative": [
-                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": lambda: car_repair_effect(self)},
+                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": car_repair_effect},
                 {"name": "Medical Bill", "description": "You have unexpected medical expenses.", "cash_effect": medical_bill_effect},
-                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lambda: lost_wallet_effect(self)},
+                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lost_wallet_effect},
                 {"name": "Phone Repair", "description": "Your phone screen cracked.", "cash_effect": phone_repair_effect},
             ]
         }
@@ -187,7 +185,9 @@ class Game:
             living_expenses += 500 * len(self.player.family)  # Additional expenses per family member
 
         # Adjust for inflation over time (2% per year)
-        inflation_factor = (1.02) ** self.current_year
+        # Cap inflation to prevent unrealistic values over long gameplay
+        inflation_years = min(self.current_year, 30)  # Cap at 30 years of inflation
+        inflation_factor = (1.02) ** inflation_years
         living_expenses *= inflation_factor
 
         # Pay living expenses
@@ -243,7 +243,21 @@ class Game:
         event_type = "positive" if random.random() < 0.5 else "negative"
         event = random.choice(self.events[event_type])
         
-        cash_effect = event["cash_effect"]()
+        # Handle different types of cash_effect (function or string identifier)
+        cash_effect_handler = event["cash_effect"]
+        if isinstance(cash_effect_handler, str):
+            # Handle string identifiers
+            if cash_effect_handler == "bonus_effect":
+                cash_effect = bonus_effect(self)
+            elif cash_effect_handler == "car_repair_effect":
+                cash_effect = car_repair_effect(self)
+            elif cash_effect_handler == "lost_wallet_effect":
+                cash_effect = lost_wallet_effect(self)
+            else:
+                cash_effect = 0  # Default if unknown
+        else:
+            # Handle function directly
+            cash_effect = cash_effect_handler()
         
         # Only show events that have an effect
         if cash_effect == 0:
@@ -1606,18 +1620,30 @@ class Game:
         Raises:
             GameSaveError: If saving fails or slot is invalid.
         """
-        import pickle
         if slot not in (1, 2, 3):
             raise GameSaveError(f"Invalid save slot: {slot}. Must be 1, 2, or 3.")
         filename = f"savegame_slot{slot}.dat"
         try:
+            data = {
+                'version': self.SAVE_VERSION,
+                'game_state': self._serialize_state()
+            }
             with open(filename, "wb") as f:
-                pickle.dump({
-                    'version': self.SAVE_VERSION,
-                    'game': self
-                }, f)
+                pickle.dump(data, f)
         except Exception as e:
+            import logging
+            logging.error(f"Failed to save game: {e}")
             raise GameSaveError(f"Failed to save game: {e}")
+            
+    def _serialize_state(self):
+        """Convert the current game state to a serializable dictionary."""
+        return {
+            'player': self.player,
+            'current_month': self.current_month,
+            'current_year': self.current_year,
+            'game_over': self.game_over,
+            # Add more fields as needed for extensibility
+        }
 
     def load_state(self, slot=1):
         """
@@ -1627,8 +1653,8 @@ class Game:
         Raises:
             GameSaveError: If loading fails, slot is invalid, or version mismatch.
         """
-        import pickle
         import os
+        import logging
         if slot not in (1, 2, 3):
             raise GameSaveError(f"Invalid load slot: {slot}. Must be 1, 2, or 3.")
         filename = f"savegame_slot{slot}.dat"
@@ -1637,12 +1663,21 @@ class Game:
         try:
             with open(filename, "rb") as f:
                 data = pickle.load(f)
-                if 'version' not in data or data['version'] != self.SAVE_VERSION:
-                    raise GameSaveError("Save file version mismatch or missing version.")
-                loaded_game = data['game']
-                self.__dict__.update(loaded_game.__dict__)
+                version = data.get('version', 0)
+                if version != self.SAVE_VERSION:
+                    logging.warning(f"Save file version {version} does not match game version {self.SAVE_VERSION}. Attempting to load anyway...")
+                self._deserialize_state(data['game_state'])
         except Exception as e:
+            logging.error(f"Error loading game: {e}")
             raise GameSaveError(f"Failed to load game: {e}")
+            
+    def _deserialize_state(self, state):
+        """Restore the game state from a dictionary."""
+        self.player = state['player']
+        self.current_month = state['current_month']
+        self.current_year = state['current_year']
+        self.game_over = state['game_over']
+        # Add more fields as needed for extensibility
 
     def quit(self):
         """Quit the game (for GUI mode)."""

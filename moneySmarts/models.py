@@ -126,12 +126,15 @@ class Loan:
             
         # Apply payment to interest first, then principal
         interest_payment = self.current_balance * (self.interest_rate / 12)
-        principal_payment = min(amount - interest_payment, self.current_balance)
         
-        if principal_payment < 0:
+        # Check if payment covers interest
+        if amount <= interest_payment:
             # If payment doesn't cover interest, all goes to interest
             interest_payment = amount
             principal_payment = 0
+        else:
+            # Payment covers interest and some principal
+            principal_payment = min(amount - interest_payment, self.current_balance)
             
         self.current_balance -= principal_payment
         

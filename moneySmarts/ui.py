@@ -3,6 +3,7 @@ import os
 from pygame.locals import *
 from moneySmarts.constants import *
 from moneySmarts.sound_manager import SoundManager
+from moneySmarts.event_manager import EventBus
 
 class Button:
     """
@@ -29,7 +30,7 @@ class Button:
     def draw(self, surface):
         """Draw the button on the given surface."""
         color = self.hover_color if self.hovered else self.color
-        pygame.draw.rect(surface, BLUE, self.rect)
+        pygame.draw.rect(surface, color, self.rect)
 
         text_surface = self.font.render(self.text, True, self.text_color)
         text_rect = text_surface.get_rect(center=self.rect.center)
@@ -101,6 +102,14 @@ class Screen:
         self.game = game
         self.buttons = []
         self.next_screen = None
+
+        # Subscribe to random events for UI notification
+        EventBus.subscribe("random_event", self.on_random_event)
+        
+    def on_random_event(self, event, effect, player):
+        """Handle random events published by the event system (override in subclasses for custom UI)."""
+        # Example: print/log or update UI elements
+        pass
 
     def handle_events(self, events):
         """Handle pygame events for this screen."""
@@ -178,9 +187,9 @@ class GUIManager:
                     self.running = False
                 elif event.type == pygame.VIDEORESIZE:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                    # Optionally, update global SCREEN_WIDTH/HEIGHT if used elsewhere
-                    global SCREEN_WIDTH, SCREEN_HEIGHT
-                    SCREEN_WIDTH, SCREEN_HEIGHT = event.w, event.h
+                    # Store screen dimensions locally instead of modifying global constants
+                    self.screen_width = event.w
+                    self.screen_height = event.h
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                         # If the current screen has a back_btn, trigger its action

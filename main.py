@@ -8,9 +8,11 @@ It initializes the game and starts the main game loop.
 import pygame
 import sys
 import traceback
+import logging
 from moneySmarts import Game, GUIManager
 from moneySmarts.screens import GameScreen, TitleScreen, CreditCardScreen
 from moneySmarts.screens.base_screens import NameInputScreen, IntroScreen
+from moneySmarts.exceptions import GameError
 from moneySmarts.screens.financial_screens import (
     BankAccountScreen, BankDetailsScreen, DepositScreen, WithdrawScreen,
     GetDebitCardScreen, CreditCardDetailsScreen, PayCreditCardScreen,
@@ -44,32 +46,43 @@ GREEN = (0, 200, 0)
 def main():
     """
     Main function that initializes and runs the game.
+    Sets up error logging and handles uncaught exceptions.
     """
-    # Initialize pygame
-    pygame.init()
-    pygame.font.init()
-    pygame.mixer.init()  # Initialize mixer for sound
-
-    # Make window resizable
-    screen = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
-    pygame.display.set_caption("Money Smartz")
-
-    # Create game instance
-    game = Game()
-    game.screen = screen  # Pass screen to game if needed
-
-    # Create GUI manager
-    gui_manager = GUIManager(game)
-    game.gui_manager = gui_manager
-
-    # Set initial screen
-    gui_manager.set_screen(TitleScreen(game))
-
-    # Run the game
+    # Set up logging
+    logging.basicConfig(
+        filename='money_smarts.log',
+        level=logging.ERROR,
+        format='%(asctime)s %(levelname)s %(name)s %(message)s'
+    )
     try:
+        # Initialize pygame
+        pygame.init()
+        pygame.font.init()
+        pygame.mixer.init()  # Initialize mixer for sound
+
+        # Make window resizable
+        screen = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
+        pygame.display.set_caption("Money Smartz")
+
+        # Create game instance
+        game = Game()
+        game.screen = screen  # Pass screen to game if needed
+
+        # Create GUI manager
+        gui_manager = GUIManager(game)
+        game.gui_manager = gui_manager
+
+        # Set initial screen
+        gui_manager.set_screen(TitleScreen(game))
+
+        # Main game loop
         gui_manager.run()
+    except GameError as ge:
+        logging.error(f"Game error: {ge}")
+        print(f"A game error occurred: {ge}")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error("Uncaught exception:", exc_info=True)
+        print("An unexpected error occurred. Please check money_smarts.log for details.")
         traceback.print_exc()
     finally:
         pygame.quit()
