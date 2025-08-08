@@ -4,15 +4,7 @@ from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
 
 # Define the shop items with prices and descriptions
-WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
-LIGHT_GRAY = (211, 211, 211)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-FONT_LARGE = 36
-FONT_MEDIUM = 24
-FONT_SMALL = 18
+# Using constants imported from moneySmarts.constants
 
 
 SHOP_ITEMS = [
@@ -50,7 +42,7 @@ class ShopScreen(Screen):
             btn = Button(60, y, 300, 50, f"{item['name']} - ${item['price']}", action=lambda i=idx: self.select_item(i))
             self.buttons.append(btn)
             y += 60
-        self.main_back_btn = Button(60, 600, 180, 50, "Back", self.go_back)
+        self.main_back_btn = Button(60, 600, 180, 50, "Back", color=BLUE, hover_color=LIGHT_BLUE, text_color=WHITE, action=self.go_back)
         # Add inventory button
         inventory_btn = Button(
             SCREEN_WIDTH - 220, 20, 200, 50, "View Inventory", action=self.show_inventory_popup

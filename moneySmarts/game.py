@@ -257,7 +257,12 @@ class Game:
                 cash_effect = 0  # Default if unknown
         else:
             # Handle function directly
-            cash_effect = cash_effect_handler()
+            # Check if the function expects a game parameter
+            import inspect
+            if len(inspect.signature(cash_effect_handler).parameters) > 0:
+                cash_effect = cash_effect_handler(self)
+            else:
+                cash_effect = cash_effect_handler()
         
         # Only show events that have an effect
         if cash_effect == 0:
@@ -1637,6 +1642,7 @@ class Game:
             
     def _serialize_state(self):
         """Convert the current game state to a serializable dictionary."""
+        # Don't include self.events as it contains function references that can't be pickled
         return {
             'player': self.player,
             'current_month': self.current_month,
@@ -1677,6 +1683,8 @@ class Game:
         self.current_month = state['current_month']
         self.current_year = state['current_year']
         self.game_over = state['game_over']
+        # Reinitialize events since they weren't serialized
+        self.events = self.initialize_events()
         # Add more fields as needed for extensibility
 
     def quit(self):

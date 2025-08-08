@@ -33,3 +33,55 @@ Traceback (most recent call last):
   File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\game.py", line 1620, in save_state
     raise GameSaveError(f"Failed to save game: {e}")
 moneySmarts.game.GameSaveError: Failed to save game: Can't pickle local object 'Game.initialize_events.<locals>.<lambda>'
+2025-08-08 08:00:05,973 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\shop_screen.py", line 259, in draw
+    self.main_back_btn.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument
+2025-08-08 08:02:02,353 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\shop_screen.py", line 251, in draw
+    self.main_back_btn.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument
+2025-08-08 08:07:09,642 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 199, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\shop_screen.py", line 223, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\shop_screen.py", line 42, in <lambda>
+    btn = Button(60, y, 300, 50, f"{item['name']} - ${item['price']}", action=lambda i=idx: self.select_item(i))
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\shop_screen.py", line 66, in select_item
+    self.game.gui_manager.set_screen(HomePurchaseScreen(self.game))
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\home_purchase_screen.py", line 23, in __init__
+    pygame.image.load(os.path.join(assets_dir, 'home_starter.png')).convert_alpha(),
+FileNotFoundError: No such file or directory: 'C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\assets\home_starter.png'.
+2025-08-08 11:09:50,242 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 199, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 532, in handle_events
+    super().handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 126, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 290, in continue_to_next_month
+    self.game.trigger_random_event()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\game.py", line 260, in trigger_random_event
+    cash_effect = cash_effect_handler()
+TypeError: lost_wallet_effect() missing 1 required positional argument: 'game'

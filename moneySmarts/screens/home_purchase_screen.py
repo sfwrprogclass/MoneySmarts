@@ -18,11 +18,11 @@ class HomePurchaseScreen(Screen):
         self.popup_text = ""
         self.create_buttons()
         # Load home images
-        assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
+        # Use ASSETS_DIR from constants instead of calculating it
         self.home_images = [
-            pygame.image.load(os.path.join(assets_dir, 'home_starter.png')).convert_alpha(),
-            pygame.image.load(os.path.join(assets_dir, 'home_family.png')).convert_alpha(),
-            pygame.image.load(os.path.join(assets_dir, 'home_luxury.png')).convert_alpha()
+            pygame.image.load(os.path.join(ASSETS_DIR, 'home_starter.png')).convert_alpha(),
+            pygame.image.load(os.path.join(ASSETS_DIR, 'home_family.png')).convert_alpha(),
+            pygame.image.load(os.path.join(ASSETS_DIR, 'home_luxury.png')).convert_alpha()
         ]
 
     def create_buttons(self):

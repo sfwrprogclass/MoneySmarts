@@ -1,14 +1,18 @@
+from typing import Callable
+
 import pygame
 import random
 import os
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.sound_manager import SoundManager
+from moneySmarts.gui_manager import GameManager
+
 
 class TitleScreen(Screen):
     play_startup_music = True  # Enable music for this screen
-    
-    def __init__(self, game):
+
+    def __init__(self, game: GameManager) -> None:
         super().__init__(game)
         
         # Get assets path
@@ -227,7 +231,7 @@ class TitleScreen(Screen):
             surface.blit(text, text_rect)
 
         # Title
-        title_surface = self.title_font.render("MONEY SMARTZ", True, YELLOW)
+        title_surface = self.title_font.render("MONEY SMARTS", True, YELLOW)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, self.title_y))
         surface.blit(title_surface, title_rect)
 
