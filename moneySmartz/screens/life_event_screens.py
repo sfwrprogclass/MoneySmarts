@@ -474,6 +474,9 @@ class HousingScreen(Screen):
 
         # State (0 = house selection, 1 = payment selection, 2 = confirmation)
         self.state = 0
+        
+        # Preview house for state 0 (defaults to first option)
+        self._preview_house = self.house_options[0]
 
         # Create house selection buttons
         self.create_house_buttons()
@@ -576,8 +579,13 @@ class HousingScreen(Screen):
     def select_house(self, house):
         """Select a house to purchase."""
         self.selected_house = house
+        self._preview_house = house  # Update preview
         self.state = 1
         self.create_house_buttons()
+
+    def set_preview_house(self, house):
+        """Set the preview house for state 0."""
+        self._preview_house = house
 
     def go_back_to_house_selection(self):
         """Go back to house selection."""
@@ -722,6 +730,17 @@ class HousingScreen(Screen):
                 text_surface = self.text_font.render(line, True, BLACK)
                 text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 150 + i * 30))
                 surface.blit(text_surface, text_rect)
+                
+            # Draw preview images for house options (small thumbnails)
+            if hasattr(self, '_preview_house') and self._preview_house:
+                preview_position = (SCREEN_WIDTH // 2 - 100, 450)
+                preview_size = (200, 150)
+                self.draw_building_image(surface, self._preview_house['name'], 'exterior',
+                                       preview_position, preview_size)
+                
+                preview_label = self.text_font.render(f"Preview: {self._preview_house['name']}", True, BLACK)
+                preview_rect = preview_label.get_rect(center=(SCREEN_WIDTH // 2, 620))
+                surface.blit(preview_label, preview_rect)
 
         elif self.state == 1:
             # Payment method selection state
@@ -761,8 +780,25 @@ class HousingScreen(Screen):
                 text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 150 + i * 30))
                 surface.blit(text_surface, text_rect)
 
-            # Draw house image (with image support)
-            self.draw_building_image(surface, self.selected_house['name'], 'exterior')
+            # Draw house exterior and interior images (with image support)
+            # Show exterior on the left, interior on the right
+            exterior_position = (SCREEN_WIDTH // 4 - 100, 400)
+            interior_position = (3 * SCREEN_WIDTH // 4 - 100, 400)
+            image_size = (200, 150)
+            
+            self.draw_building_image(surface, self.selected_house['name'], 'exterior', 
+                                   exterior_position, image_size)
+            self.draw_building_image(surface, self.selected_house['name'], 'interior', 
+                                   interior_position, image_size)
+            
+            # Add labels for the images
+            exterior_label = self.text_font.render("Exterior", True, BLACK)
+            exterior_rect = exterior_label.get_rect(center=(SCREEN_WIDTH // 4, 570))
+            surface.blit(exterior_label, exterior_rect)
+            
+            interior_label = self.text_font.render("Interior", True, BLACK)
+            interior_rect = interior_label.get_rect(center=(3 * SCREEN_WIDTH // 4, 570))
+            surface.blit(interior_label, interior_rect)
 
         elif self.state == 3:
             # Not enough money state
