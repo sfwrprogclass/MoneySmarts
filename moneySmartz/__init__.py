@@ -11,6 +11,7 @@ from moneySmartz.constants import *
 from moneySmartz.models import Player, BankAccount, Card, Loan, Asset
 from moneySmartz.game import Game
 from moneySmartz.ui import Button, TextInput, Screen, GUIManager
+from moneySmartz.image_manager import ImageManager, image_manager
 
 # Version information
 __version__ = "1.0.0"

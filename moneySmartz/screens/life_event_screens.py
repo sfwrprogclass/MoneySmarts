@@ -4,6 +4,7 @@ from pygame.locals import *
 from moneySmartz.constants import *
 from moneySmartz.ui import Screen, Button, TextInput
 from moneySmartz.models import Loan, Asset, Card
+from moneySmartz.image_manager import image_manager
 
 class HighSchoolGraduationScreen(Screen):
     """
@@ -627,6 +628,77 @@ class HousingScreen(Screen):
         from moneySmartz.screens.game_screen import GameScreen
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
+    def draw_building_image(self, surface, building_name, image_type='exterior', position=None, size=(200, 150)):
+        """
+        Draw a building image if available, otherwise fall back to simple drawing.
+        
+        Args:
+            surface: The pygame surface to draw on
+            building_name: Name of the building type
+            image_type: 'exterior' or 'interior'
+            position: (x, y) position to draw at, defaults to center
+            size: (width, height) size for the image
+        """
+        if position is None:
+            position = (SCREEN_WIDTH // 2 - size[0] // 2, 400)
+            
+        x, y = position
+        width, height = size
+        
+        # Try to load the building image
+        building_image = image_manager.get_building_image(building_name, image_type, size)
+        
+        if building_image:
+            # Draw the actual image
+            surface.blit(building_image, (x, y))
+        else:
+            # Fall back to simple drawing (existing code)
+            self.draw_simple_house(surface, x + width // 2, y + height // 2, width, height)
+    
+    def draw_simple_house(self, surface, center_x, center_y, width=150, height=100):
+        """
+        Draw a simple house using pygame primitives (fallback).
+        """
+        # Calculate positions based on center
+        house_x = center_x - width // 2
+        house_y = center_y - height // 2
+        
+        # Draw house body
+        house_rect = pygame.Rect(house_x, house_y, width, height)
+        pygame.draw.rect(surface, LIGHT_BLUE, house_rect)
+
+        # Draw roof
+        roof_height = height // 2
+        pygame.draw.polygon(surface, RED, [
+            (house_x - 10, house_y),
+            (house_x + width + 10, house_y),
+            (center_x, house_y - roof_height)
+        ])
+
+        # Draw door
+        door_width = width // 5
+        door_height = height // 2
+        door_x = center_x - door_width // 2
+        door_y = house_y + height - door_height
+        door_rect = pygame.Rect(door_x, door_y, door_width, door_height)
+        pygame.draw.rect(surface, BROWN, door_rect)
+
+        # Draw windows
+        window_size = min(width // 6, height // 4)
+        window_y = house_y + height // 4
+        
+        # Left window
+        left_window_x = house_x + width // 6
+        window_rect1 = pygame.Rect(left_window_x, window_y, window_size, window_size)
+        pygame.draw.rect(surface, WHITE, window_rect1)
+        pygame.draw.rect(surface, BLACK, window_rect1, 2)  # Border
+
+        # Right window
+        right_window_x = house_x + width - width // 6 - window_size
+        window_rect2 = pygame.Rect(right_window_x, window_y, window_size, window_size)
+        pygame.draw.rect(surface, WHITE, window_rect2)
+        pygame.draw.rect(surface, BLACK, window_rect2, 2)  # Border
+
     def draw(self, surface):
         """Draw the housing screen."""
         # Background
@@ -689,29 +761,8 @@ class HousingScreen(Screen):
                 text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 150 + i * 30))
                 surface.blit(text_surface, text_rect)
 
-            # Draw house image (simple house shape)
-            house_rect = pygame.Rect(SCREEN_WIDTH // 2 - 75, 400, 150, 100)
-            pygame.draw.rect(surface, LIGHT_BLUE, house_rect)
-
-            # Draw roof
-            pygame.draw.polygon(surface, RED, [
-                (SCREEN_WIDTH // 2 - 85, 400),
-                (SCREEN_WIDTH // 2 + 85, 400),
-                (SCREEN_WIDTH // 2, 350)
-            ])
-
-            # Draw door
-            door_rect = pygame.Rect(SCREEN_WIDTH // 2 - 15, 450, 30, 50)
-            pygame.draw.rect(surface, BROWN, door_rect)
-
-            # Draw window
-            window_rect = pygame.Rect(SCREEN_WIDTH // 2 - 50, 420, 25, 25)
-            pygame.draw.rect(surface, WHITE, window_rect)
-            pygame.draw.rect(surface, BLACK, window_rect, 2)  # Border
-
-            window_rect2 = pygame.Rect(SCREEN_WIDTH // 2 + 25, 420, 25, 25)
-            pygame.draw.rect(surface, WHITE, window_rect2)
-            pygame.draw.rect(surface, BLACK, window_rect2, 2)  # Border
+            # Draw house image (with image support)
+            self.draw_building_image(surface, self.selected_house['name'], 'exterior')
 
         elif self.state == 3:
             # Not enough money state
