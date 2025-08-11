@@ -261,6 +261,33 @@ class GameScreen(Screen):
         self.show_utility_popup = False
         self.create_buttons()
 
+    def check_game_over_conditions(self):
+        """Check for game over conditions and transition if needed."""
+        reason = None
+        # Bankruptcy: cash below zero and no assets
+        if self.game.player.cash < 0 and not self.game.player.assets:
+            reason = "Bankruptcy! You have no cash or assets left."
+        # Excessive debt: credit card or loan debt exceeds $10,000
+        total_debt = 0
+        if self.game.player.credit_card:
+            total_debt += self.game.player.credit_card.balance
+        for loan in self.game.player.loans:
+            total_debt += loan.balance
+        if total_debt > 10000:
+            reason = "Game Over: Your debts are too high to continue."
+        # Unpaid utility bills (simulate shutoff)
+        if hasattr(self, 'utility_bill_amount') and self.utility_bill_amount and self.show_utility_popup:
+            if self.game.player.cash < self.utility_bill_amount:
+                reason = "Game Over: Utilities shut off due to unpaid bills."
+        # Retirement age
+        if self.game.player.age >= 65:
+            reason = "Congratulations! You reached retirement age."
+        if reason:
+            from moneySmarts.screens.game_over_screen import GameOverScreen
+            self.game.gui_manager.set_screen(GameOverScreen(self.game, reason=reason))
+            return True
+        return False
+
     def continue_to_next_month(self):
         """Continue to the next month."""
         # Check if player exists before processing
@@ -297,11 +324,10 @@ class GameScreen(Screen):
         # If no life event was triggered, refresh the game screen
         if not life_event_triggered:
             # Check game over conditions
-            if self.game.player.age >= 65:  # Retirement age
-                self.game.end_game_gui("retirement")
-            else:
-                # Refresh buttons (in case player status changed)
-                self.create_buttons()
+            if self.check_game_over_conditions():
+                return
+            # Refresh buttons (in case player status changed)
+            self.create_buttons()
 
         # Show utility bill popup every month
         self.trigger_utility_popup()

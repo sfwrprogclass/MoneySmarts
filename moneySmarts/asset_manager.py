@@ -56,3 +56,38 @@ class AssetManager:
 
     def get_font(self, key):
         return self.fonts.get(key)
+
+    def get_asset_value(self, asset_type, name, years_owned=0):
+        """
+        Calculate the current value of an asset (vehicle or building) based on depreciation.
+        """
+        from moneySmarts.constants import VEHICLE_IMAGES, BUILDING_DATA
+        if asset_type == "vehicle" and name in VEHICLE_IMAGES:
+            base = VEHICLE_IMAGES[name]["base_value"]
+            rate = VEHICLE_IMAGES[name]["depreciation_rate"]
+            return max(500, int(base * ((1 - rate) ** years_owned)))
+        elif asset_type == "building" and name in BUILDING_DATA:
+            base = BUILDING_DATA[name]["base_value"]
+            rate = BUILDING_DATA[name]["depreciation_rate"]
+            return max(10000, int(base * ((1 - rate) ** years_owned)))
+        return None
+
+    def get_asset_costs(self, asset_type, name):
+        """
+        Return annual costs for maintenance, insurance, and taxes (if building).
+        """
+        from moneySmarts.constants import VEHICLE_IMAGES, BUILDING_DATA
+        if asset_type == "vehicle" and name in VEHICLE_IMAGES:
+            v = VEHICLE_IMAGES[name]
+            return {
+                "maintenance": v["maintenance_cost"],
+                "insurance": v["insurance_cost"]
+            }
+        elif asset_type == "building" and name in BUILDING_DATA:
+            b = BUILDING_DATA[name]
+            return {
+                "maintenance": b["maintenance_cost"],
+                "insurance": b["insurance_cost"],
+                "property_tax": b["property_tax"]
+            }
+        return None

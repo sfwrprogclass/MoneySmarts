@@ -34,6 +34,9 @@ class ShopScreen(Screen):
         self.buttons = []
         self.create_buttons()
         self.create_payment_buttons()
+        self.show_insufficient_popup = False
+        self.insufficient_text = ""
+        self.insufficient_ok_btn = None
 
     def create_buttons(self):
         self.buttons = []
@@ -83,6 +86,28 @@ class ShopScreen(Screen):
         # Redraw screen to ensure popup is gone
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
+    def show_insufficient_funds_popup(self, item_name, required, available):
+        self.insufficient_text = (
+            f"Insufficient funds for {item_name}!\n"
+            f"Required: ${required:,.2f}\nAvailable: ${available:,.2f}"
+        )
+        self.show_insufficient_popup = True
+        self.insufficient_ok_btn = Button(
+            SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 40, 200, 50, "OK", action=self.close_insufficient_popup
+        )
+
+    def close_insufficient_popup(self):
+        # Only close the popup if the game is not over
+        if hasattr(self.game, 'is_game_over') and self.game.is_game_over:
+            # Transition to GameOverScreen instead of freezing
+            from moneySmarts.screens.game_over_screen import GameOverScreen
+            self.game.gui_manager.set_screen(GameOverScreen(self.game, reason="Game Over: You cannot make purchases due to unpaid bills."))
+            return
+        self.show_insufficient_popup = False
+        self.insufficient_text = ""
+        self.insufficient_ok_btn = None
+        self.game.gui_manager.set_screen(ShopScreen(self.game))
+
     def pay_cash(self):
         if not self.selected_item:
             self.message = "Select an item first."
@@ -105,8 +130,7 @@ class ShopScreen(Screen):
             self.show_payment_popup = False
             self.show_confirmation_popup = True
         else:
-            self.message = "Not enough cash."
-            self.close_popup()
+            self.show_insufficient_funds_popup(self.selected_item['name'], price, cash_before)
 
     def pay_bank(self):
         if not self.selected_item:
@@ -131,8 +155,7 @@ class ShopScreen(Screen):
             self.show_payment_popup = False
             self.show_confirmation_popup = True
         else:
-            self.message = "Not enough in bank account."
-            self.close_popup()
+            self.show_insufficient_funds_popup(self.selected_item['name'], price, bank_before)
 
     def pay_credit(self):
         if not self.selected_item:
@@ -156,8 +179,7 @@ class ShopScreen(Screen):
             self.show_payment_popup = False
             self.show_confirmation_popup = True
         else:
-            self.message = "Not enough credit or no card."
-            self.close_popup()
+            self.show_insufficient_funds_popup(self.selected_item['name'], price, credit_before)
 
     def go_back(self):
         self.show_payment_popup = False
@@ -193,44 +215,35 @@ class ShopScreen(Screen):
                         self.selected_item = None
                         self.game.gui_manager.set_screen(ShopScreen(self.game))
                         return
-        if self.show_payment_popup:
+        elif self.show_insufficient_popup and self.insufficient_ok_btn:
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    action = self.insufficient_ok_btn.update(mouse_pos, True)
+                    if callable(action):
+                        action()
+                        return
+        elif self.show_payment_popup:
             # Only handle payment popup buttons
             for btn in [self.pay_cash_btn, self.pay_bank_btn, self.pay_credit_btn, self.popup_back_btn]:
                 action = btn.update(mouse_pos, mouse_click)
                 if callable(action):
                     action()
-                    return  # Prevent further event handling
-            for event in events:
-                if event.type == pygame.KEYDOWN:
-                    if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
-                        self.close_popup()
-            return  # Prevent main buttons from being handled
-        elif hasattr(self, 'show_inventory') and self.show_inventory:
-            mouse_pos = pygame.mouse.get_pos()
-            mouse_click = False
-            for event in events:
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_click = True
+        elif getattr(self, 'show_inventory', False) and getattr(self, 'inventory_popup_btn', None):
+            # Handle inventory popup button
             action = self.inventory_popup_btn.update(mouse_pos, mouse_click)
             if callable(action):
                 action()
-                return
         else:
-            # Handle item selection buttons
+            # Handle main shop buttons (including back and inventory)
             for btn in self.buttons:
-                action = btn.update(mouse_pos, mouse_click)
+                if btn:
+                    action = btn.update(mouse_pos, mouse_click)
+                    if callable(action):
+                        action()
+            if self.main_back_btn:
+                action = self.main_back_btn.update(mouse_pos, mouse_click)
                 if callable(action):
                     action()
-                    return
-            # Handle the main Back button
-            action = self.main_back_btn.update(mouse_pos, mouse_click)
-            if callable(action):
-                action()
-                return
-            for event in events:
-                if event.type == pygame.KEYDOWN:
-                    if event.key in [pygame.K_ESCAPE, pygame.K_BACKSPACE]:
-                        self.go_back()
 
     def draw(self, surface):
         surface.fill(WHITE)
@@ -323,6 +336,18 @@ class ShopScreen(Screen):
             return  # Prevent drawing other popups/buttons
         else:
             self.ok_btn_rect = None
+        # Draw insufficient funds popup if needed
+        if self.show_insufficient_popup and self.insufficient_text:
+            popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 - 100, 440, 180)
+            pygame.draw.rect(surface, (220, 50, 50), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, (0, 0, 0), popup_rect, 3, border_radius=12)
+            font = pygame.font.SysFont('Arial', 28, bold=True)
+            lines = self.insufficient_text.split('\n')
+            for i, line in enumerate(lines):
+                text_surf = font.render(line, True, (255, 255, 255))
+                surface.blit(text_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 38))
+            if self.insufficient_ok_btn:
+                self.insufficient_ok_btn.draw(surface)
 
     def handle_event(self, event):
         # Handle OK button for insufficient funds popup and confirmation popup

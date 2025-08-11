@@ -2,13 +2,10 @@ import pygame
 import random
 import os
 from pygame.locals import *
-from moneySmartz.constants import *
-from moneySmartz.ui import Screen, Button, TextInput
-from moneySmartz.models import Loan, Asset, Card
-from moneySmartz.image_manager import image_manager
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.models import Loan, Asset, Card
+from moneySmarts.image_manager import image_manager
 
 BROWN = (139, 69, 19)
 
@@ -72,17 +69,17 @@ class HighSchoolGraduationScreen(Screen):
         """Choose to go to college."""
         # Check if player can afford college
         annual_cost = 20000
-        if self.game.player.cash >= annual_cost:
-            self.game.player.cash -= annual_cost
-        elif self.game.player.bank_account and self.game.player.bank_account.balance >= annual_cost:
-            self.game.player.bank_account.withdraw(annual_cost)
+        player = self.game.player
+        if self.can_afford(annual_cost, "Cash"):
+            player.cash -= annual_cost
+        elif self.can_afford(annual_cost, "Bank Account"):
+            player.bank_account.withdraw(annual_cost)
         else:
-            # Need a student loan
-            loan_amount = 80000  # 4 years of college
-            loan = Loan("Student", loan_amount, 0.05, 20)  # 5% interest, 20-year term
-            self.game.player.loans.append(loan)
+            available = max(player.cash, player.bank_account.balance if player.bank_account else 0)
+            self.show_insufficient_funds_popup("College Tuition", annual_cost, available)
+            return
 
-        self.game.player.education = "College (In Progress)"
+        player.education = "College (In Progress)"
         self.show_recurring_bill_popup("College Tuition", 20000 // 12)
 
         # Return to game screen
@@ -93,16 +90,17 @@ class HighSchoolGraduationScreen(Screen):
         """Choose to go to trade school."""
         # Check if player can afford trade school
         cost = 10000
-        if self.game.player.cash >= cost:
-            self.game.player.cash -= cost
-        elif self.game.player.bank_account and self.game.player.bank_account.balance >= cost:
-            self.game.player.bank_account.withdraw(cost)
+        player = self.game.player
+        if self.can_afford(cost, "Cash"):
+            player.cash -= cost
+        elif self.can_afford(cost, "Bank Account"):
+            player.bank_account.withdraw(cost)
         else:
-            # Need a student loan
-            loan = Loan("Student", cost, 0.05, 10)  # 5% interest, 10-year term
-            self.game.player.loans.append(loan)
+            available = max(player.cash, player.bank_account.balance if player.bank_account else 0)
+            self.show_insufficient_funds_popup("Trade School Tuition", cost, available)
+            return
 
-        self.game.player.education = "Trade School"
+        player.education = "Trade School"
         self.show_recurring_bill_popup("Trade School Tuition", 10000 // 24)
 
         # Return to game screen
@@ -320,6 +318,11 @@ class CarPurchaseScreen(Screen):
         # State (0 = car selection, 1 = payment selection, 2 = confirmation)
         self.state = 0
 
+        # Insufficient funds popup
+        self.insufficient_funds_message = None
+        self.show_insufficient_funds = False
+        self.insufficient_funds_btn = None
+
         # Create car selection buttons
         self.create_car_buttons()
 
@@ -389,6 +392,29 @@ class CarPurchaseScreen(Screen):
             )
             self.buttons.append(confirm_button)
 
+    def show_insufficient_funds_popup(self, item_name, required, available):
+        self.insufficient_funds_message = (
+            f"Insufficient funds for {item_name}!\n"
+            f"Required: ${required:,}\nAvailable: ${available:,}"
+        )
+        self.show_insufficient_funds = True
+        self.insufficient_funds_btn = Button(
+            SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 40, 200, 50, "OK", action=self.close_insufficient_funds_popup
+        )
+
+    def close_insufficient_funds_popup(self):
+        self.show_insufficient_funds = False
+        self.insufficient_funds_message = None
+        self.insufficient_funds_btn = None
+
+    # --- UNIVERSAL PURCHASE CHECK ---
+    def can_afford(self, amount, source):
+        if source == "Cash":
+            return self.game.player.cash >= amount
+        elif source == "Bank Account":
+            return self.game.player.bank_account and self.game.player.bank_account.balance >= amount
+        return False
+
     def select_car(self, car):
         """Select a car to purchase."""
         self.selected_car = car
@@ -403,27 +429,33 @@ class CarPurchaseScreen(Screen):
     def select_payment_method(self, method):
         """Select a payment method."""
         self.payment_method = method
-
+        car_value = self.selected_car['value']
+        player = self.game.player
         # Process payment
-        if method == "Cash" and self.game.player.cash >= self.selected_car['value']:
-            self.game.player.cash -= self.selected_car['value']
+        if method == "Cash":
+            if player.cash >= car_value:
+                player.cash -= car_value
+            else:
+                self.show_insufficient_funds_popup("Cash", car_value, player.cash)
+                return
         elif method == "Bank Account":
-            self.game.player.bank_account.withdraw(self.selected_car['value'])
+            if player.bank_account.balance >= car_value:
+                player.bank_account.withdraw(car_value)
+            else:
+                self.show_insufficient_funds_popup("Bank Account", car_value, player.bank_account.balance)
+                return
         else:  # Auto Loan
             # Determine loan terms based on credit score
-            if self.game.player.credit_score >= 700:
+            if player.credit_score >= 700:
                 interest_rate = 0.03  # 3%
-            elif self.game.player.credit_score >= 650:
+            elif player.credit_score >= 650:
                 interest_rate = 0.05  # 5%
             else:
                 interest_rate = 0.08  # 8%
-
-            loan = Loan("Auto", self.selected_car['value'], interest_rate, 5)  # 5-year auto loan
-            self.game.player.loans.append(loan)
-
+            loan = Loan("Auto", car_value, interest_rate, 5)  # 5-year auto loan
+            player.loans.append(loan)
         # Add car to assets
-        self.game.player.assets.append(Asset("Car", self.selected_car['name'], self.selected_car['value']))
-
+        player.assets.append(Asset("Car", self.selected_car['name'], car_value))
         # Move to confirmation
         self.state = 2
         self.create_car_buttons()
@@ -511,6 +543,19 @@ class CarPurchaseScreen(Screen):
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
+
+        # Draw insufficient funds popup if needed
+        if self.show_insufficient_funds and self.insufficient_funds_message:
+            popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 - 100, 440, 180)
+            pygame.draw.rect(surface, (220, 50, 50), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, (0, 0, 0), popup_rect, 3, border_radius=12)
+            font = pygame.font.SysFont('Arial', 28, bold=True)
+            lines = self.insufficient_funds_message.split('\n')
+            for i, line in enumerate(lines):
+                text_surf = font.render(line, True, (255, 255, 255))
+                surface.blit(text_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 38))
+            if self.insufficient_funds_btn:
+                self.insufficient_funds_btn.draw(surface)
 
 class HousingScreen(Screen):
     """

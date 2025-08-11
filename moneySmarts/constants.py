@@ -65,3 +65,60 @@ BUILDING_IMAGES = {
         "interior": "urban_condo_interior.png"
     }
 }
+
+# Vehicle image filenames and financial data
+VEHICLE_IMAGES = {
+    "Used Car": {
+        "image": "vehicle_used_car.png",
+        "base_value": 5000,
+        "depreciation_rate": 0.15,
+        "maintenance_cost": 400,
+        "insurance_cost": 600
+    },
+    "Sedan": {
+        "image": "vehicle_sedan.png",
+        "base_value": 18000,
+        "depreciation_rate": 0.18,
+        "maintenance_cost": 600,
+        "insurance_cost": 900
+    },
+    "SUV": {
+        "image": "vehicle_suv.png",
+        "base_value": 25000,
+        "depreciation_rate": 0.20,
+        "maintenance_cost": 800,
+        "insurance_cost": 1200
+    }
+}
+
+# Building financial data
+BUILDING_DATA = {
+    "Small Starter Home": {
+        "base_value": 120000,
+        "depreciation_rate": 0.01,
+        "maintenance_cost": 1200,
+        "insurance_cost": 800,
+        "property_tax": 1800
+    },
+    "Mid-size Family Home": {
+        "base_value": 220000,
+        "depreciation_rate": 0.012,
+        "maintenance_cost": 1800,
+        "insurance_cost": 1200,
+        "property_tax": 3200
+    },
+    "Large Luxury Home": {
+        "base_value": 450000,
+        "depreciation_rate": 0.015,
+        "maintenance_cost": 3500,
+        "insurance_cost": 2500,
+        "property_tax": 7000
+    },
+    "Urban Condo": {
+        "base_value": 180000,
+        "depreciation_rate": 0.011,
+        "maintenance_cost": 1000,
+        "insurance_cost": 900,
+        "property_tax": 2200
+    }
+}

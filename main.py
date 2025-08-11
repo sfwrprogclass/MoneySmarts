@@ -60,15 +60,15 @@ def main():
         pygame.font.init()
         pygame.mixer.init()  # Initialize mixer for sound
 
-        # Make window resizable
+        # Make the window resizable
         screen = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
         pygame.display.set_caption("Money Smartz")
 
-        # Create game instance
+        # Create a game instance
         game = Game()
         game.screen = screen  # Pass screen to game if needed
 
-        # Create GUI manager
+        # Create a GUI manager
         gui_manager = GUIManager(game)
         game.gui_manager = gui_manager
 

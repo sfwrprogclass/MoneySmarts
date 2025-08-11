@@ -27,6 +27,85 @@ class Player:
             {"name": "Water", "amount": 30},
             {"name": "Internet", "amount": 50}
         ]
+        self.insurance_policies = []  # List of Insurance objects
+        self.investments = []  # List of Investment objects
+
+    def purchase_insurance(self, insurance_type, premium, coverage_amount, deductible):
+        """Add a new insurance policy to the player."""
+        from moneySmarts.models import Insurance
+        policy = Insurance(insurance_type, premium, coverage_amount, deductible)
+        self.insurance_policies.append(policy)
+        self.recurring_bills.append({
+            "name": f"{insurance_type} Insurance Premium",
+            "amount": premium,
+            "source": "bank_or_credit"
+        })
+
+    def invest(self, investment_type, amount, expected_annual_return):
+        """Add a new investment for the player."""
+        from moneySmarts.models import Investment
+        if amount > 0 and self.cash >= amount:
+            self.cash -= amount
+            investment = Investment(investment_type, amount, expected_annual_return)
+            self.investments.append(investment)
+            return True
+        return False
+
+    def file_insurance_claim(self, insurance_type, loss_amount):
+        """File a claim for a specific insurance type if policy exists."""
+        for policy in self.insurance_policies:
+            if policy.insurance_type == insurance_type and policy.active:
+                payout = policy.file_claim(loss_amount)
+                self.cash += payout
+                return payout
+        return 0
+
+    def purchase_investment(self):
+        """Menu-driven investment purchase for realism."""
+        print("\n--- INVESTMENT OPTIONS ---")
+        print("1. Stock Market (Avg. 7% annual return, high risk)")
+        print("2. Bonds (Avg. 3% annual return, low risk)")
+        print("3. Retirement Account (Avg. 5% annual return, medium risk)")
+        choice = input("Choose investment type (1-3): ")
+        if choice == "1":
+            inv_type, ret = "Stock", 0.07
+        elif choice == "2":
+            inv_type, ret = "Bond", 0.03
+        elif choice == "3":
+            inv_type, ret = "Retirement", 0.05
+        else:
+            print("Invalid choice.")
+            return False
+        amt = 0
+        while amt <= 0 or amt > self.cash:
+            try:
+                amt = float(input(f"How much to invest? Available cash: ${self.cash:.2f}: "))
+                if amt <= 0:
+                    print("Amount must be positive.")
+                elif amt > self.cash:
+                    print("Not enough cash.")
+            except Exception:
+                print("Invalid input.")
+        return self.invest(inv_type, amt, ret)
+
+    def purchase_insurance_menu(self):
+        """Menu-driven insurance purchase for realism."""
+        print("\n--- INSURANCE OPTIONS ---")
+        print("1. Car Insurance ($50/mo, $10,000 coverage, $500 deductible)")
+        print("2. Home Insurance ($60/mo, $200,000 coverage, $1,000 deductible)")
+        print("3. Health Insurance ($80/mo, $50,000 coverage, $1,000 deductible)")
+        choice = input("Choose insurance type (1-3): ")
+        if choice == "1":
+            self.purchase_insurance("Car", 50, 10000, 500)
+        elif choice == "2":
+            self.purchase_insurance("Home", 60, 200000, 1000)
+        elif choice == "3":
+            self.purchase_insurance("Health", 80, 50000, 1000)
+        else:
+            print("Invalid choice.")
+            return False
+        print("Insurance purchased.")
+        return True
 
 class BankAccount:
     """
@@ -183,3 +262,34 @@ class Asset:
         """Repair the asset to improve its condition."""
         self.condition = "Good"
         return cost
+
+class Insurance:
+    """
+    Represents insurance for an asset or health.
+    """
+    def __init__(self, insurance_type, premium, coverage_amount, deductible):
+        self.insurance_type = insurance_type  # e.g. 'Car', 'Home', 'Health'
+        self.premium = premium  # Monthly cost
+        self.coverage_amount = coverage_amount  # Max payout
+        self.deductible = deductible  # Out-of-pocket cost before insurance pays
+        self.active = True
+
+    def file_claim(self, loss_amount):
+        if not self.active:
+            return 0
+        payout = max(0, min(loss_amount - self.deductible, self.coverage_amount))
+        return payout
+
+class Investment:
+    """
+    Represents an investment (stocks, bonds, retirement).
+    """
+    def __init__(self, investment_type, amount, expected_annual_return):
+        self.investment_type = investment_type  # e.g. 'Stock', 'Bond', 'Retirement'
+        self.amount = amount
+        self.expected_annual_return = expected_annual_return
+
+    def apply_monthly_return(self):
+        monthly_return = self.amount * (self.expected_annual_return / 12)
+        self.amount += monthly_return
+        return monthly_return

@@ -6,13 +6,13 @@ import os
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.sound_manager import SoundManager
-from moneySmarts.gui_manager import GameManager
+from moneySmarts.ui import GUIManager
 
 
 class TitleScreen(Screen):
     play_startup_music = True  # Enable music for this screen
 
-    def __init__(self, game: GameManager) -> None:
+    def __init__(self, game: GUIManager) -> None:
         super().__init__(game)
         
         # Get assets path
@@ -81,7 +81,7 @@ class TitleScreen(Screen):
         try:
             # Corrected path to assets folder
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            # Go up two levels to get to moneySmartz-main
+            # Go up two levels to get to project root
             root_dir = os.path.dirname(os.path.dirname(current_dir))
             assets_dir = os.path.join(root_dir, 'assets')
             image_path = os.path.join(assets_dir, 'title_background.jpg')

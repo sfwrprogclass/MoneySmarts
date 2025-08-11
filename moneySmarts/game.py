@@ -93,6 +93,31 @@ class Game:
         input("\nPress Enter to begin your financial journey...")
         self.game_loop()
 
+    def process_annual_asset_expenses(self):
+        """
+        Deduct annual maintenance, insurance, and property tax for all player assets.
+        Update asset values using depreciation.
+        """
+        from moneySmarts.asset_manager import AssetManager
+        asset_manager = AssetManager()
+        total_expenses = 0
+        for asset in self.player.assets:
+            if asset.asset_type in ["vehicle", "car", "Car"]:
+                costs = asset_manager.get_asset_costs("vehicle", asset.name)
+                value = asset_manager.get_asset_value("vehicle", asset.name, asset.years_owned)
+                asset.value = value
+                if costs:
+                    total_expenses += costs["maintenance"] + costs["insurance"]
+            elif asset.asset_type in ["building", "home", "House", "Condo"]:
+                costs = asset_manager.get_asset_costs("building", asset.name)
+                value = asset_manager.get_asset_value("building", asset.name, asset.years_owned)
+                asset.value = value
+                if costs:
+                    total_expenses += costs["maintenance"] + costs["insurance"] + costs["property_tax"]
+        self.player.cash -= total_expenses
+        if self.gui_manager:
+            self.gui_manager.show_message(f"Annual asset expenses deducted: ${total_expenses}")
+
     def game_loop(self):
         """Main game loop for text mode (legacy)."""
         while not self.game_over:
@@ -102,19 +127,23 @@ class Game:
                 self.current_year += 1
                 self.player.age += 1
 
-                # Apply interest to savings
-                if self.player.bank_account and self.player.bank_account.account_type == "Savings":
-                    self.player.bank_account.apply_interest()
-
                 # Age assets
                 for asset in self.player.assets:
                     asset.age_asset()
 
-            # Process monthly income and expenses
-            self.process_monthly_finances()
+                # Deduct annual asset expenses and update values
+                self.process_annual_asset_expenses()
+
+            # Apply savings interest monthly (not just annually)
+            if self.player.bank_account and self.player.bank_account.account_type == "Savings":
+                self.player.bank_account.apply_interest()
+
+            # Process monthly income and expenses (only every 3 months to reduce frequency)
+            if self.current_month % 3 == 0:
+                self.process_monthly_finances()
 
             # Random events
-            if random.random() < 0.3:  # 30% chance of an event each month
+            if random.random() < 0.15:  # Reduced from 30% to 15% chance of an event each month
                 self.trigger_random_event()
 
             # Life stage events based on age
@@ -187,7 +216,7 @@ class Game:
         # Adjust for inflation over time (2% per year)
         # Cap inflation to prevent unrealistic values over long gameplay
         inflation_years = min(self.current_year, 30)  # Cap at 30 years of inflation
-        inflation_factor = (1.02) ** inflation_years
+        inflation_factor = 1.02 ** inflation_years
         living_expenses *= inflation_factor
 
         # Pay living expenses
@@ -237,6 +266,25 @@ class Game:
             if not paid:
                 self.player.credit_score -= 5  # Penalty for missed utility
                 print(f"Missed utility bill: {util['name']}")
+
+        # Process insurance premiums
+        for policy in self.player.insurance_policies:
+            paid = False
+            if self.player.bank_account and self.player.bank_account.balance >= policy.premium:
+                self.player.bank_account.withdraw(policy.premium)
+                paid = True
+            elif self.player.cash >= policy.premium:
+                self.player.cash -= policy.premium
+                paid = True
+            if not paid:
+                self.player.credit_score -= 5  # Penalty for missed premium
+                print(f"Missed insurance premium for {policy.insurance_type} insurance.")
+
+        # Apply investment returns
+        for investment in self.player.investments:
+            monthly_return = investment.apply_monthly_return()
+            self.player.cash += monthly_return
+            print(f"Investment ({investment.investment_type}) returned ${monthly_return:.2f} this month.")
 
     def trigger_random_event(self):
         """Trigger a random financial event."""
@@ -315,7 +363,7 @@ class Game:
 
         # Family planning opportunity
         if self.player.age >= 28 and not self.player.family and self.player.job:
-            if random.random() < 0.1:  # 10% chance each year after 28
+            if random.random() < 0.03:  # Reduced from 10% to 3% chance each year after 28
                 self.family_planning_opportunity()
 
     def high_school_graduation_event(self):
@@ -702,6 +750,8 @@ class Game:
 
         if self.player.bank_account:
             print(f"Bank Account ({self.player.bank_account.account_type}): ${self.player.bank_account.balance:.2f}")
+        if self.player.savings_account:
+            print(f"Savings Account: ${self.player.savings_account.balance:.2f} (Interest Rate: {self.player.savings_account.interest_rate*100:.2f}% annually)")
 
         if self.player.credit_card:
             print(f"Credit Card: ${self.player.credit_card.balance:.2f}/{self.player.credit_card.limit:.2f}")
@@ -1788,3 +1838,9 @@ class Game:
 
         input("\nPress Enter to continue...")
 
+    def restart(self):
+        """Restart the game with a new player and reset the state."""
+        self.__init__()
+        if self.gui_manager:
+            from moneySmarts.screens.game_screen import GameScreen
+            self.gui_manager.set_screen(GameScreen(self))

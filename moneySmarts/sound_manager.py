@@ -9,7 +9,7 @@ class SoundManager:
         self.music_volume = 0.5
         
     def load_music(self, filename, name):
-        """Load music file and store it by name"""
+        """Load a music file and store it by name"""
         # We don't actually load the file, we just store the path
         # Pygame mixer loads music when played
         self.sounds[name] = filename
