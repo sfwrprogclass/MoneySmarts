@@ -155,6 +155,10 @@ class ShopScreen(Screen):
             )
             self.show_payment_popup = False
             self.show_confirmation_popup = True
+            # Automatically return to main shop menu after confirmation
+            self.selected_item = None
+            self.show_confirmation_popup = False
+            self.message = "Purchase successful!"
         else:
             self.show_insufficient_funds_popup(self.selected_item['name'], price, bank_before)
 

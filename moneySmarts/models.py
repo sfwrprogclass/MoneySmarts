@@ -16,6 +16,7 @@ class Player:
         salary (float): Player's annual salary.
         cash (float): Player's available cash.
         bank_account (BankAccount): Player's bank account.
+        savings_account (BankAccount): Player's savings account.
         debit_card (Card): Player's debit card.
         credit_card (Card): Player's credit card.
         credit_score (int): Player's credit score.
@@ -25,8 +26,15 @@ class Player:
         inventory (list): List of purchased items.
         recurring_bills (list): List of recurring bills (dicts).
         utility_bills (list): List of utility bills (dicts).
+        insurance_policies (list): List of Insurance objects.
+        investments (list): List of Investment objects.
     """
     def __init__(self, name):
+        """
+        Initialize a new Player instance with default financial attributes.
+        Args:
+            name (str): The player's name.
+        """
         self.name = name
         self.age = 16
         self.education = "High School"
@@ -52,7 +60,14 @@ class Player:
         self.investments = []  # List of Investment objects
 
     def purchase_insurance(self, insurance_type, premium, coverage_amount, deductible):
-        """Add a new insurance policy to the player."""
+        """
+        Add a new insurance policy to the player and update recurring bills.
+        Args:
+            insurance_type (str): Type of insurance (e.g., 'Car', 'Home', 'Health').
+            premium (float): Monthly premium cost.
+            coverage_amount (float): Maximum coverage amount.
+            deductible (float): Deductible amount.
+        """
         policy = Insurance(insurance_type, premium, coverage_amount, deductible)
         self.insurance_policies.append(policy)
         self.recurring_bills.append({
@@ -62,7 +77,15 @@ class Player:
         })
 
     def invest(self, investment_type, amount, expected_annual_return):
-        """Add a new investment for the player."""
+        """
+        Add a new investment for the player if sufficient cash is available.
+        Args:
+            investment_type (str): Type of investment (e.g., 'Stock', 'Bond').
+            amount (float): Amount to invest.
+            expected_annual_return (float): Expected annual return rate.
+        Returns:
+            bool: True if investment was successful, False otherwise.
+        """
         if amount > 0 and self.cash >= amount:
             self.cash -= amount
             investment = Investment(investment_type, amount, expected_annual_return)
@@ -71,7 +94,14 @@ class Player:
         return False
 
     def file_insurance_claim(self, insurance_type, loss_amount):
-        """File a claim for a specific insurance type if policy exists."""
+        """
+        File a claim for a specific insurance type if policy exists and is active.
+        Args:
+            insurance_type (str): Type of insurance to claim.
+            loss_amount (float): Amount of loss to claim.
+        Returns:
+            float: Payout amount received from insurance.
+        """
         for policy in self.insurance_policies:
             if policy.insurance_type == insurance_type and policy.active:
                 payout = policy.file_claim(loss_amount)
@@ -80,7 +110,11 @@ class Player:
         return 0
 
     def purchase_investment(self):
-        """Menu-driven investment purchase for realism."""
+        """
+        Menu-driven investment purchase for realism. Prompts user for investment type and amount.
+        Returns:
+            bool: True if investment was successful, False otherwise.
+        """
         print("\n--- INVESTMENT OPTIONS ---")
         print("1. Stock Market (Avg. 7% annual return, high risk)")
         print("2. Bonds (Avg. 3% annual return, low risk)")
@@ -108,7 +142,11 @@ class Player:
         return self.invest(inv_type, amt, ret)
 
     def purchase_insurance_menu(self):
-        """Menu-driven insurance purchase for realism."""
+        """
+        Menu-driven insurance purchase for realism. Prompts user for insurance type.
+        Returns:
+            bool: True if insurance was purchased, False otherwise.
+        """
         print("\n--- INSURANCE OPTIONS ---")
         print("1. Car Insurance ($50/mo, $10,000 coverage, $500 deductible)")
         print("2. Home Insurance ($60/mo, $200,000 coverage, $1,000 deductible)")

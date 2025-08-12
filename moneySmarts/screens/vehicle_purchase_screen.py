@@ -87,6 +87,8 @@ class VehiclePurchaseScreen(Screen):
                 f"You bought the {self.selected_vehicle['name']} from bank!"
             )
             self.selected_vehicle = None
+            # Automatically return to previous menu after purchase
+            self.go_back()  # Ensure go_back() navigates correctly
         else:
             self.message = "Not enough in bank account."
 

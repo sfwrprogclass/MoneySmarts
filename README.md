@@ -1,139 +1,82 @@
 # MoneySmarts: Financial Life Simulator
 
-MoneySmarts is an educational and entertaining financial life simulator game. Players make real-world financial decisions, manage budgets, purchase homes and vehicles, handle life events, and learn about personal finance in a fun, interactive way.
+MoneySmarts is an educational financial life simulator game. Players make real-world financial decisions, manage budgets, purchase homes and vehicles, handle life events, and learn about personal finance in a fun, interactive way.
 
 ## Game Overview
-
-In MoneySmarts, you'll navigate the financial challenges and opportunities of life:
-
-- Start as a high school student getting your first bank account
-- Make education decisions (college, trade school, or start working)
+- Start as a high school student and open your first bank account
+- Make education choices (college, trade school, or start working)
 - Apply for credit cards and build your credit score
 - Buy vehicles and manage transportation costs
 - Find jobs and advance your career
 - Purchase a home and manage a mortgage
-- Start a family and handle the associated expenses
-- Deal with random life events (both positive and negative)
+- Start a family and handle expenses
+- Deal with random life events
 - Save for retirement and build wealth
 
 ## Features
-
-- Buy homes and vehicles with realistic financial constraints
-- Shop for everyday items and manage recurring bills
-- Experience random and planned life events
-- Track your cash, bank, and credit balances
-- Inventory and recurring bill management
+- Realistic banking, credit, and loan systems
+- Asset management (homes, vehicles, investments)
+- Family planning and life events
+- Recurring bills and budgeting
 - Pixel art graphics and engaging UI
 - Save/load game progress
+- Hot-swappable images and Unity export support
 
 ## How to Play
+1. Install Python and Pygame (`pip install pygame`)
+2. Run the game: `python main.py`
+3. Use your mouse to navigate the interface and make decisions
+4. Try to maximize your net worth and achieve financial security by retirement
 
-1. Make sure you have Python installed on your computer
-2. Install Pygame: `pip install pygame`
-3. Run the game by executing: `python main.py`
-4. Use your mouse to navigate the graphical interface and make decisions
-5. Try to maximize your net worth and achieve financial security by retirement
+## Controls
+- Mouse: interact with buttons and menus
+- Keyboard: ESC or Backspace to go back
 
-## GUI Features
+## Assets
+All game assets (images, sounds, fonts) are in the `assets/` folder. Images are hot-swappable and can be exported for Unity via the automated script in `moneySmarts/image_manager.py`.
 
-- **Intuitive Interface**: Easy-to-navigate screens with buttons and visual feedback
-- **Financial Dashboard**: Visual representation of your financial status
-- **Interactive Decisions**: Make life choices through a point-and-click interface
-- **Visual Feedback**: Color-coded indicators for positive and negative events
-- **End Game Summary**: Visual breakdown of your financial success
+## Project Structure
+- Modular MVC architecture
+- Models: game entities (Player, BankAccount, Card, Loan, Asset)
+- Views: UI components and screens
+- Controller: game logic and state management
 
-## Game Features
-
-- **Banking System**: Open accounts, make deposits and withdrawals, earn interest
-- **Credit System**: Apply for credit cards, make payments, build credit score
-- **Loan Management**: Take out loans for education, vehicles, and housing
-- **Career Progression**: Find better jobs as you gain education and experience
-- **Asset Management**: Purchase and maintain assets like vehicles and homes
-- **Family Planning**: Get married, have children, and manage family expenses
-- **Random Events**: Experience unexpected financial events (medical bills, bonuses, etc.)
+## Development Status
+- Basic game functionality implemented
+- Modular architecture and MVC pattern in progress
+- Migration from monolithic to modular structure ongoing
+- Documentation and feature improvements ongoing
 
 ## Financial Education
-
-This game teaches important financial concepts:
+Learn about:
 - Budgeting and saving
 - Credit management
 - Loan amortization
-- Asset depreciation and appreciation
+- Asset depreciation/appreciation
 - Investment growth
 - Income progression
 - Financial planning
 
-## Project Structure
-
-The project follows a modular architecture with the Model-View-Controller (MVC) pattern:
-
-- **Models** (`moneySmarts/models.py`): Data structures for game entities (Player, BankAccount, Card, Loan, Asset)
-- **Views** (`moneySmarts/ui.py` and `moneySmarts/screens/`): UI components and screen classes
-- **Controller** (`moneySmarts/game.py`): Game logic and state management
-
-### Directory Structure:
+## Unity Export
+To export all images for Unity, run:
+```bash
+python moneySmarts/image_manager.py
 ```
-moneySmartz2/
-├── docs/
-│   └── tasks.md         # Development tasks and roadmap
-├── moneySmarts/
-│   ├── screens/         # Screen classes organized by category
-│   ├── __init__.py      # Package initialization
-│   ├── constants.py     # Game constants and configuration
-│   ├── game.py          # Game logic (controller)
-│   ├── models.py        # Data models
-│   └── ui.py            # UI components
-├── main.py              # Entry point
-├── moneySmartz.py       # Legacy monolithic file (being migrated)
-└── README.md            # This file
-```
-
-## Development Status
-
-This project is under active development. Current progress:
-
-- ✅ Basic game functionality implemented
-- ✅ Modular architecture started
-- ✅ MVC pattern partially implemented
-- 🔄 Migration from monolithic to modular structure in progress
-- 📝 Documentation improvements ongoing
-- 🚧 Many features planned (see `docs/tasks.md`)
-
-## Getting Started
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Run the game:**
-   ```bash
-   python main.py
-   ```
-
-## Controls
-- Use your mouse to interact with buttons and menus
-- Keyboard shortcuts: ESC or Backspace to go back
-
-## Assets
-All game assets (images, sounds, fonts) are located in the `assets/` folder.
+This will copy all PNG/JPG images from `assets/images` to `assets/unity_export` for easy Unity import.
 
 ## How to Contribute
-
-Contributions are welcome! Here's how you can help:
-
-1. Check the `docs/tasks.md` file for planned improvements
+1. Check `docs/tasks.md` for planned improvements
 2. Fork the repository
-3. Create a feature branch (`git checkout -b feature/amazing-feature`)
-4. Commit your changes (`git commit -m 'Add some amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+3. Create a feature branch
+4. Commit and push your changes
+5. Open a Pull Request
 
 ## Tips for Success
-
-- Education generally leads to higher income potential
+- Education leads to higher income potential
 - Pay off high-interest debt first
 - Save for emergencies
 - Invest early for retirement
-- Don't buy more house than you can afford
+- Don’t buy more house than you can afford
 - Maintain good credit by paying bills on time
 
 ## License

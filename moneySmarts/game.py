@@ -2,11 +2,13 @@ import random
 import time
 import os
 import pickle
+import logging
 from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
 from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
 from moneySmarts.screens.base_screens import EndGameScreen
 from moneySmarts.event_manager import EventBus
 from moneySmarts.config_manager import Config
+from moneySmarts.exceptions import GameError, BankAccountError
 
 SAVEGAME_VERSION = 1
 
@@ -95,6 +97,7 @@ class Game:
         """
         Start a new game in text mode (legacy mode).
         Prompts for player name and initial choices, then enters the main loop.
+        Implements error handling and logging for robustness.
         """
         self.clear_screen()
         print("=" * 60)
@@ -105,26 +108,35 @@ class Game:
         print("to retirement, with all the ups and downs along the way.")
         print("\nMake wise financial decisions and see how they affect your life!")
         print("\n" + "=" * 60)
-
-        name = input("\nEnter your name: ")
-        self.player = Player(name)
-
+        try:
+            name = input("\nEnter your name: ")
+            if not name:
+                raise GameError("Player name cannot be empty.")
+            self.player = Player(name)
+        except Exception as e:
+            logging.error(f"Error initializing player: {e}")
+            print("An error occurred while starting the game. Please try again.")
+            return
         print(f"\nWelcome, {self.player.name}! You're a 16-year-old high school student.")
         print("Your parents suggest that you should open your first bank account.")
-
-        choice = self.get_choice("Do you want to open a bank account?", ["Yes", "No"])
-        if choice == "Yes":
-            self.player.bank_account = BankAccount()
-            self.player.bank_account.deposit(50)  # Parents give you $50 to start
-            print("\nCongratulations! You've opened your first checking account.")
-            print("Your parents deposited $50 to get you started.")
-
-            choice = self.get_choice("Would you like a debit card with your account?", ["Yes", "No"])
+        try:
+            choice = self.get_choice("Do you want to open a bank account?", ["Yes", "No"])
             if choice == "Yes":
-                self.player.debit_card = Card("Debit")
-                print("\nYou now have a debit card linked to your checking account.")
-        else:
-            print("\nYou decided not to open a bank account yet. You can do this later.")
+                self.player.bank_account = BankAccount()
+                self.player.bank_account.deposit(50)  # Parents give you $50 to start
+                print("\nCongratulations! You've opened your first checking account.")
+                print("Your parents deposited $50 to get you started.")
+
+                choice = self.get_choice("Would you like a debit card with your account?", ["Yes", "No"])
+                if choice == "Yes":
+                    self.player.debit_card = Card("Debit")
+                    print("\nYou now have a debit card linked to your checking account.")
+        except BankAccountError as e:
+            logging.error(f"Bank account error: {e}")
+            print("Failed to open bank account. Please contact support.")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            print("An unexpected error occurred. Please try again.")
 
         input("\nPress Enter to begin your financial journey...")
         self.game_loop()
