@@ -150,3 +150,25 @@ Traceback (most recent call last):
   File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
     pygame.draw.rect(surface, color, self.rect)
 TypeError: invalid color argument
+2025-08-11 22:54:24,104 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2204, in draw
+    button.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument
+2025-08-11 22:55:57,410 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2204, in draw
+    button.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument

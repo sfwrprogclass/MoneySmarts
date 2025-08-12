@@ -47,13 +47,12 @@ class Player:
             {"name": "Electricity", "amount": 60},
             {"name": "Water", "amount": 30},
             {"name": "Internet", "amount": 50}
-        ]
+        ])
         self.insurance_policies = []  # List of Insurance objects
         self.investments = []  # List of Investment objects
 
     def purchase_insurance(self, insurance_type, premium, coverage_amount, deductible):
         """Add a new insurance policy to the player."""
-        from moneySmarts.models import Insurance
         policy = Insurance(insurance_type, premium, coverage_amount, deductible)
         self.insurance_policies.append(policy)
         self.recurring_bills.append({
@@ -64,7 +63,6 @@ class Player:
 
     def invest(self, investment_type, amount, expected_annual_return):
         """Add a new investment for the player."""
-        from moneySmarts.models import Investment
         if amount > 0 and self.cash >= amount:
             self.cash -= amount
             investment = Investment(investment_type, amount, expected_annual_return)
@@ -261,28 +259,27 @@ class Loan:
             if amount <= 0:
                 raise LoanError("Payment amount must be positive.")
 
-        # Apply payment to interest first, then principal
-        interest_payment = self.current_balance * (self.interest_rate / 12)
+            # Apply payment to interest first, then principal
+            interest_payment = self.current_balance * (self.interest_rate / 12)
 
-        # Check if payment covers interest
-        if amount <= interest_payment:
-            # If payment doesn't cover interest, all goes to interest
-            interest_payment = amount
-            principal_payment = 0
-        else:
-            # Payment covers interest and some principal
-            principal_payment = min(amount - interest_payment, self.current_balance)
+            # Check if payment covers interest
+            if amount <= interest_payment:
+                # If payment doesn't cover interest, all goes to interest
+                interest_payment = amount
+                principal_payment = 0
+            else:
+                # Payment covers interest and some principal
+                principal_payment = min(amount - interest_payment, self.current_balance)
 
-        self.current_balance -= principal_payment
+            self.current_balance -= principal_payment
 
-        if self.current_balance < 0.01:  # Handle small floating-point errors
-            self.current_balance = 0
+            if self.current_balance < 0.01:  # Handle small floating-point errors
+                self.current_balance = 0
 
-        self.payment_history.append({
-            "amount": amount,
-            "interest": interest_payment,
-            "principal": principal_payment
-
+            self.payment_history.append({
+                "amount": amount,
+                "interest": interest_payment,
+                "principal": principal_payment
             })
             return True
         except Exception as e:

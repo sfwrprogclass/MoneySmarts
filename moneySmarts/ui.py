@@ -30,6 +30,9 @@ class Button:
     def draw(self, surface):
         """Draw the button on the given surface."""
         color = self.hover_color if self.hovered else self.color
+        # Validate color is a tuple of 3 integers (RGB)
+        if not (isinstance(color, tuple) and len(color) in (3, 4) and all(isinstance(c, int) and 0 <= c <= 255 for c in color)):
+            color = (0, 120, 255)  # Default to BLUE
         pygame.draw.rect(surface, color, self.rect)
 
         text_surface = self.font.render(self.text, True, self.text_color)
@@ -43,6 +46,7 @@ class Button:
         """
         self.hovered = self.rect.collidepoint(mouse_pos)
         if self.hovered and mouse_click and self.action:
+            print(f"Button '{self.text}' clicked. Action: {self.action}")
             return self.action
         return None
 
