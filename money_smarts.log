@@ -85,3 +85,68 @@ Traceback (most recent call last):
   File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\game.py", line 260, in trigger_random_event
     cash_effect = cash_effect_handler()
 TypeError: lost_wallet_effect() missing 1 required positional argument: 'game'
+2025-08-11 20:34:04,124 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 199, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 126, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 590, in get_debit_card
+    self.game.gui_manager.set_screen(GameScreen(self.game))
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 15, in __init__
+    self.create_buttons()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 126, in create_buttons
+    action=self.open_savings_account
+AttributeError: 'GameScreen' object has no attribute 'open_savings_account'
+2025-08-11 20:57:26,020 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 199, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 390, in handle_events
+    super().handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 126, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 407, in open_banking_menu
+    self.game.gui_manager.set_screen(BankingMenuScreen(self.game))
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2142, in __init__
+    self.create_buttons()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2157, in create_buttons
+    btn = Button(
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 14, in __init__
+    self.rect = pygame.Rect(x, y, width, height)
+TypeError: Argument must be rect style object
+2025-08-11 21:00:54,296 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2196, in draw
+    f"Checking: ${self.game.player.checking_account.balance:.2f}",
+AttributeError: 'Player' object has no attribute 'checking_account'
+2025-08-11 21:13:11,593 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2204, in draw
+    button.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument
+2025-08-11 21:13:47,703 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 201, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 2204, in draw
+    button.draw(surface)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
+    pygame.draw.rect(surface, color, self.rect)
+TypeError: invalid color argument

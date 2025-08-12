@@ -21,6 +21,7 @@ SHOP_ITEMS = [
 class ShopScreen(Screen):
     def __init__(self, game):
         super().__init__(game)
+        self.ok_btn_rect = None
         self.popup_back_btn = None
         self.pay_credit_btn = None
         self.pay_bank_btn = None

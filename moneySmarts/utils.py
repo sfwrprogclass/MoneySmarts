@@ -45,3 +45,4 @@ def log_and_raise(exception, message):
     """
     logging.error(message)
     raise exception(message)
+

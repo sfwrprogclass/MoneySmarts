@@ -4,7 +4,7 @@ Image management utilities for the Money Smarts game.
 
 import pygame
 import os
-from moneySmartz.constants import EXTERIORS_DIR, INTERIORS_DIR, BUILDING_IMAGES
+from moneySmarts.constants import EXTERIORS_DIR, INTERIORS_DIR, BUILDING_IMAGES
 
 
 class ImageManager:

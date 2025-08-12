@@ -22,6 +22,3 @@ class AssetError(GameError):
     """Exception for asset-related errors."""
     pass
 
-class GameSaveError(GameError):
-    """Exception for game save/load-related errors."""
-    pass

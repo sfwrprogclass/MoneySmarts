@@ -26,216 +26,48 @@ class GameScreen(Screen):
         """Create the buttons for the game screen."""
         # Clear existing buttons
         self.buttons = []
-
-        # Continue button (always present)
         continue_button = Button(
-            SCREEN_WIDTH - 220, 
-            SCREEN_HEIGHT - 60,
-            200, 50,
-            "Continue to Next Month",
-            action=self.continue_to_next_month
-        )
+            SCREEN_WIDTH - 220, SCREEN_HEIGHT - 60, 200, 50,
+            "Continue to Next Month", action=self.continue_to_next_month)
         self.buttons.append(continue_button)
-
-        # Check if player exists before creating player-specific buttons
         if not self.game.player:
             return
-
-        # Banking buttons
-        if not self.game.player.bank_account:
-            bank_button = Button(
-                20, 
-                SCREEN_HEIGHT - 270,
-                200, 50,
-                "Open Bank Account",
-                action=self.open_bank_account
-            )
-            self.buttons.append(bank_button)
-        else:
-            view_bank_button = Button(
-                20, 
-                SCREEN_HEIGHT - 270,
-                200, 50,
-                "View Bank Account",
-                action=self.view_bank_account
-            )
-            self.buttons.append(view_bank_button)
-
-            deposit_button = Button(
-                20, 
-                SCREEN_HEIGHT - 210,
-                200, 50,
-                "Deposit to Bank",
-                action=self.deposit_to_bank
-            )
-            self.buttons.append(deposit_button)
-
-            withdraw_button = Button(
-                20, 
-                SCREEN_HEIGHT - 150,
-                200, 50,
-                "Withdraw from Bank",
-                action=self.withdraw_from_bank
-            )
-            self.buttons.append(withdraw_button)
-
-            if not self.game.player.debit_card:
-                debit_button = Button(
-                    20, 
-                    SCREEN_HEIGHT - 90,
-                    200, 50,
-                    "Get Debit Card",
-                    action=self.get_debit_card
-                )
-                self.buttons.append(debit_button)
-
-        # Credit card buttons
+        # --- Banking Menu Button ---
+        banking_button = Button(
+            20, SCREEN_HEIGHT - 270, 200, 50,
+            "Banking", action=self.open_banking_menu)
+        self.buttons.append(banking_button)
+        # --- Other Feature Buttons ---
+        x_base = 240
+        y_base = SCREEN_HEIGHT - 270
+        y_step = 60
+        btns = []
         if not self.game.player.credit_card and self.game.player.age >= 18:
-            credit_button = Button(
-                240, 
-                SCREEN_HEIGHT - 270,
-                200, 50,
-                "Apply for Credit Card",
-                action=self.apply_for_credit_card
-            )
-            self.buttons.append(credit_button)
+            btns.append(Button(x_base, y_base, 200, 50, "Apply for Credit Card", action=self.apply_for_credit_card))
         elif self.game.player.credit_card:
-            view_credit_button = Button(
-                240, 
-                SCREEN_HEIGHT - 270,
-                200, 50,
-                "View Credit Card",
-                action=self.view_credit_card
-            )
-            self.buttons.append(view_credit_button)
-
+            btns.append(Button(x_base, y_base, 200, 50, "View Credit Card", action=self.view_credit_card))
             if self.game.player.credit_card.balance > 0:
-                pay_credit_button = Button(
-                    240, 
-                SCREEN_HEIGHT - 210,
-                200, 50,
-                "Pay Credit Card",
-                action=self.pay_credit_card
-            )
-            self.buttons.append(pay_credit_button)
-
-        # Loan buttons
+                btns.append(Button(x_base, y_base + y_step, 200, 50, "Pay Credit Card", action=self.pay_credit_card))
         if self.game.player.loans:
-            view_loans_button = Button(
-                240, 
-                SCREEN_HEIGHT - 150,
-                200, 50,
-                "View Loans",
-                action=self.view_loans
-            )
-            self.buttons.append(view_loans_button)
-
-            pay_loan_button = Button(
-                240, 
-                SCREEN_HEIGHT - 90,
-                200, 50,
-                "Make Extra Loan Payment",
-                action=self.make_extra_loan_payment
-            )
-            self.buttons.append(pay_loan_button)
-
-        # Asset buttons
+            btns.append(Button(x_base, y_base + 2*y_step, 200, 50, "View Loans", action=self.view_loans))
+            btns.append(Button(x_base, y_base + 3*y_step, 200, 50, "Make Extra Loan Payment", action=self.make_extra_loan_payment))
         if self.game.player.assets:
-            view_assets_button = Button(
-                460, 
-                SCREEN_HEIGHT - 270,
-                200, 50,
-                "View Assets",
-                action=self.view_assets
-            )
-            self.buttons.append(view_assets_button)
-
-        # Job buttons
+            btns.append(Button(x_base + 220, y_base, 200, 50, "View Assets", action=self.view_assets))
         if not self.game.player.job and self.game.player.age >= 16:
-            job_button = Button(
-                460, 
-                SCREEN_HEIGHT - 210,
-                200, 50,
-                "Look for a Job",
-                action=self.look_for_job
-            )
-            self.buttons.append(job_button)
-        elif self.game.player.job and random.random() < 0.1:  # 10% chance of job opportunity each month
-            better_job_button = Button(
-                460, 
-                SCREEN_HEIGHT - 210,
-                200, 50,
-                "Look for a Better Job",
-                action=self.look_for_job
-            )
-            self.buttons.append(better_job_button)
-
+            btns.append(Button(x_base + 220, y_base + y_step, 200, 50, "Look for a Job", action=self.look_for_job))
+        elif self.game.player.job and random.random() < 0.1:
+            btns.append(Button(x_base + 220, y_base + y_step, 200, 50, "Look for a Better Job", action=self.look_for_job))
         # --- System Control Buttons ---
-        # Move these buttons down below the top banner (e.g., y=100 and y=150)
-        pause_button = Button(
-            SCREEN_WIDTH - 220,
-            100,
-            90, 40,
-            "Pause",
-            action=self.pause_game
-        )
-        self.buttons.append(pause_button)
-
-        play_button = Button(
-            SCREEN_WIDTH - 120,
-            100,
-            90, 40,
-            "Play",
-            action=self.play_game
-        )
-        self.buttons.append(play_button)
-
-        save_button = Button(
-            SCREEN_WIDTH - 220,
-            150,
-            90, 40,
-            "Save",
-            action=self.save_game
-        )
-        self.buttons.append(save_button)
-
-        load_button = Button(
-            SCREEN_WIDTH - 120,
-            150,
-            90, 40,
-            "Load",
-            action=self.load_game
-        )
-        self.buttons.append(load_button)
-
-        quit_button = Button(
-            SCREEN_WIDTH - 220,
-            200,
-            190, 40,
-            "Quit",
-            action=self.quit_game
-        )
-        self.buttons.append(quit_button)
-
-        # --- Inventory Button (move to a different location and fix action) ---
-        inventory_button = Button(
-            SCREEN_WIDTH - 220,
-            SCREEN_HEIGHT - 120,
-            200, 50,
-            "View Inventory",
-            action=self.open_inventory
-        )
-        self.buttons.append(inventory_button)
-
-        # --- Shop Button ---
-        shop_button = Button(
-            SCREEN_WIDTH - 220,
-            SCREEN_HEIGHT - 180,
-            200, 50,
-            "Shop",
-            action=self.open_shop
-        )
-        self.buttons.append(shop_button)
+        self.buttons.extend([
+            Button(SCREEN_WIDTH - 220, 100, 90, 40, "Pause", action=self.pause_game),
+            Button(SCREEN_WIDTH - 120, 100, 90, 40, "Play", action=self.play_game),
+            Button(SCREEN_WIDTH - 220, 150, 90, 40, "Save", action=self.save_game),
+            Button(SCREEN_WIDTH - 120, 150, 90, 40, "Load", action=self.load_game),
+            Button(SCREEN_WIDTH - 220, 200, 190, 40, "Quit", action=self.quit_game),
+            Button(SCREEN_WIDTH - 220, SCREEN_HEIGHT - 120, 200, 50, "View Inventory", action=self.open_inventory),
+            Button(SCREEN_WIDTH - 220, SCREEN_HEIGHT - 180, 200, 50, "Shop", action=self.open_shop)
+        ])
+        self.buttons.extend(btns)
 
     def create_utility_popup_buttons(self):
         self.utility_pay_btn = Button(SCREEN_WIDTH//2-120, SCREEN_HEIGHT//2+40, 100, 50, "Pay", action=self.pay_utility_bill)
@@ -569,3 +401,27 @@ class GameScreen(Screen):
             if self.utility_skip_btn.update(mouse_pos, mouse_click):
                 self.skip_utility_bill()
                 return
+
+    def open_banking_menu(self):
+        from moneySmarts.screens.financial_screens import BankingMenuScreen
+        self.game.gui_manager.set_screen(BankingMenuScreen(self.game))
+
+    def open_savings_account(self):
+        """Open a savings account screen."""
+        from moneySmarts.screens.financial_screens import BankAccountScreen
+        self.game.gui_manager.set_screen(BankAccountScreen(self.game))
+
+    def view_savings_account(self):
+        """View savings account details."""
+        from moneySmarts.screens.financial_screens import SavingsDetailsScreen
+        self.game.gui_manager.set_screen(SavingsDetailsScreen(self.game))
+
+    def deposit_to_savings(self):
+        """Deposit money to savings account."""
+        from moneySmarts.screens.financial_screens import DepositToSavingsScreen
+        self.game.gui_manager.set_screen(DepositToSavingsScreen(self.game))
+
+    def withdraw_from_savings(self):
+        """Withdraw money from savings account."""
+        from moneySmarts.screens.financial_screens import WithdrawFromSavingsScreen
+        self.game.gui_manager.set_screen(WithdrawFromSavingsScreen(self.game))

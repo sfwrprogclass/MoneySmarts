@@ -89,17 +89,16 @@ class BankAccountScreen(Screen):
                 return  # Not enough cash
 
             # Create account
-            self.game.player.bank_account = BankAccount(self.selected_account_type)
-
-            # Make initial deposit
-            self.game.player.cash -= deposit_amount
-            self.game.player.bank_account.deposit(deposit_amount)
-
-            # If checking account, offer debit card
             if self.selected_account_type == "Checking":
+                self.game.player.bank_account = BankAccount("Checking")
+                self.game.player.cash -= deposit_amount
+                self.game.player.bank_account.deposit(deposit_amount)
                 from moneySmarts.screens.base_screens import DebitCardScreen
                 self.game.gui_manager.set_screen(DebitCardScreen(self.game))
             else:
+                self.game.player.savings_account = BankAccount("Savings")
+                self.game.player.cash -= deposit_amount
+                self.game.player.savings_account.deposit(deposit_amount)
                 from moneySmarts.screens.game_screen import GameScreen
                 self.game.gui_manager.set_screen(GameScreen(self.game))
         except ValueError:
@@ -900,10 +899,10 @@ class CreditCardDetailsScreen(Screen):
         card_number_rect = card_number.get_rect(center=(card_rect.centerx, card_rect.top + 120))
         surface.blit(card_number, card_number_rect)
         
-        limit_text = self.small_font.render(f"Limit: ${self.game.player.credit_card.limit:.2f}", True, WHITE)
+        limit_text = self.small_font.render(f"Credit Limit: ${self.game.player.credit_card.limit:.2f}", True, WHITE)
         limit_rect = limit_text.get_rect(center=(card_rect.centerx, card_rect.top + 150))
         surface.blit(limit_text, limit_rect)
-        
+
         # Account information
         info_x = 380
         info_y = 120
@@ -1157,7 +1156,7 @@ class PayCreditCardScreen(Screen):
         # Draw amount input
         self.amount_input.draw(surface)
         
-        # Status message
+        # Draw status message
         if self.status_message:
             status_surface = self.text_font.render(self.status_message, True, self.status_color)
             status_rect = status_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120))
@@ -1897,3 +1896,313 @@ class JobSearchScreen(Screen):
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
+
+class SavingsDetailsScreen(Screen):
+    """
+    Screen for viewing savings account details.
+    """
+    play_startup_music = False
+    def __init__(self, game):
+        super().__init__(game)
+        self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
+        self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        self.scroll_position = 0
+        self.max_visible_transactions = 10
+        back_button = Button(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT - 80,
+            200, 50,
+            "Back",
+            action=self.go_back
+        )
+        self.buttons = [back_button]
+    def go_back(self):
+        from moneySmarts.screens.game_screen import GameScreen
+        self.game.gui_manager.set_screen(GameScreen(self.game))
+    def draw(self, surface):
+        surface.fill(WHITE)
+        title_surface = self.title_font.render("Savings Account Details", True, BLACK)
+        title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 50))
+        surface.blit(title_surface, title_rect)
+        account = self.game.player.savings_account
+        info_lines = [
+            f"Current Balance: ${account.balance:.2f}",
+            f"Interest Rate: {account.interest_rate*100:.2f}% annually",
+            f"Projected Annual Interest: ${account.balance * account.interest_rate:.2f}"
+        ]
+        for i, line in enumerate(info_lines):
+            text_surface = self.text_font.render(line, True, BLACK)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 100 + i * 30))
+            surface.blit(text_surface, text_rect)
+        history_title = self.title_font.render("Transaction History", True, BLACK)
+        history_rect = history_title.get_rect(center=(SCREEN_WIDTH // 2, 250))
+        surface.blit(history_title, history_rect)
+        if account.transaction_history:
+            scroll_area = pygame.Rect(100, 280, SCREEN_WIDTH - 200, 300)
+            pygame.draw.rect(surface, LIGHT_GRAY, scroll_area)
+            pygame.draw.rect(surface, BLACK, scroll_area, 2)
+            visible_transactions = account.transaction_history[
+                self.scroll_position:self.scroll_position + self.max_visible_transactions
+            ]
+            for i, transaction in enumerate(visible_transactions):
+                if transaction["type"] == "deposit":
+                    text = f"Deposit: +${transaction['amount']:.2f}"
+                    color = GREEN
+                elif transaction["type"] == "withdrawal":
+                    text = f"Withdrawal: -${transaction['amount']:.2f}"
+                    color = RED
+                elif transaction["type"] == "interest":
+                    text = f"Interest: +${transaction['amount']:.2f}"
+                    color = BLUE
+                else:
+                    text = f"{transaction['type']}: ${transaction['amount']:.2f}"
+                    color = BLACK
+                text_surface = self.text_font.render(text, True, color)
+                text_rect = text_surface.get_rect(midleft=(120, 300 + i * 30))
+                surface.blit(text_surface, text_rect)
+        else:
+            no_transactions = self.text_font.render("No transactions yet.", True, BLACK)
+            no_transactions_rect = no_transactions.get_rect(center=(SCREEN_WIDTH // 2, 320))
+            surface.blit(no_transactions, no_transactions_rect)
+        for button in self.buttons:
+            button.draw(surface)
+
+class DepositToSavingsScreen(Screen):
+    """
+    Screen for depositing money to savings account.
+    """
+    play_startup_music = False
+    def __init__(self, game):
+        super().__init__(game)
+        self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
+        self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        self.amount_input = TextInput(
+            SCREEN_WIDTH // 2 - 150,
+            SCREEN_HEIGHT // 2,
+            300, 40,
+            font_size=FONT_MEDIUM,
+            max_length=10
+        )
+        deposit_button = Button(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT // 2 + 60,
+            200, 50,
+            "Deposit",
+            action=self.make_deposit
+        )
+        back_button = Button(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT // 2 + 130,
+            200, 50,
+            "Back",
+            action=self.go_back
+        )
+        self.buttons = [deposit_button, back_button]
+        self.status_message = ""
+        self.status_color = BLACK
+    def make_deposit(self):
+        try:
+            amount = float(self.amount_input.text)
+            if amount <= 0:
+                self.status_message = "Please enter a positive amount."
+                self.status_color = RED
+                return
+            if amount > self.game.player.cash:
+                self.status_message = "You don't have that much cash."
+                self.status_color = RED
+                return
+            self.game.player.cash -= amount
+            self.game.player.savings_account.deposit(amount)
+            self.status_message = f"Successfully deposited ${amount:.2f}."
+            self.status_color = GREEN
+            self.amount_input.text = ""
+        except ValueError:
+            self.status_message = "Please enter a valid number."
+            self.status_color = RED
+    def go_back(self):
+        from moneySmarts.screens.game_screen import GameScreen
+        self.game.gui_manager.set_screen(GameScreen(self.game))
+    def handle_events(self, events):
+        super().handle_events(events)
+        self.amount_input.update(events)
+    def draw(self, surface):
+        surface.fill(WHITE)
+        title_surface = self.title_font.render("Deposit to Savings", True, BLACK)
+        title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        surface.blit(title_surface, title_rect)
+        info_lines = [
+            f"Your current cash: ${self.game.player.cash:.2f}",
+            f"Your savings balance: ${self.game.player.savings_account.balance:.2f}",
+            "",
+            "How much would you like to deposit?"
+        ]
+        for i, line in enumerate(info_lines):
+            text_surface = self.text_font.render(line, True, BLACK)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 150 + i * 30))
+            surface.blit(text_surface, text_rect)
+        self.amount_input.draw(surface)
+        if self.status_message:
+            status_surface = self.text_font.render(self.status_message, True, self.status_color)
+            status_rect = status_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))
+            surface.blit(status_surface, status_rect)
+        for button in self.buttons:
+            button.draw(surface)
+
+class WithdrawFromSavingsScreen(Screen):
+    """
+    Screen for withdrawing money from savings account.
+    """
+    play_startup_music = False
+    def __init__(self, game):
+        super().__init__(game)
+        self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
+        self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        self.amount_input = TextInput(
+            SCREEN_WIDTH // 2 - 150,
+            SCREEN_HEIGHT // 2,
+            300, 40,
+            font_size=FONT_MEDIUM,
+            max_length=10
+        )
+        withdraw_button = Button(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT // 2 + 60,
+            200, 50,
+            "Withdraw",
+            action=self.make_withdrawal
+        )
+        back_button = Button(
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT // 2 + 130,
+            200, 50,
+            "Back",
+            action=self.go_back
+        )
+        self.buttons = [withdraw_button, back_button]
+        self.status_message = ""
+        self.status_color = BLACK
+    def make_withdrawal(self):
+        try:
+            amount = float(self.amount_input.text)
+            if amount <= 0:
+                self.status_message = "Please enter a positive amount."
+                self.status_color = RED
+                return
+            if amount > self.game.player.savings_account.balance:
+                self.status_message = "You don't have that much in your savings account."
+                self.status_color = RED
+                return
+            self.game.player.savings_account.withdraw(amount)
+            self.game.player.cash += amount
+            self.status_message = f"Successfully withdrew ${amount:.2f}."
+            self.status_color = GREEN
+            self.amount_input.text = ""
+        except ValueError:
+            self.status_message = "Please enter a valid number."
+            self.status_color = RED
+    def go_back(self):
+        from moneySmarts.screens.game_screen import GameScreen
+        self.game.gui_manager.set_screen(GameScreen(self.game))
+    def handle_events(self, events):
+        super().handle_events(events)
+        self.amount_input.update(events)
+    def draw(self, surface):
+        surface.fill(WHITE)
+        title_surface = self.title_font.render("Withdraw from Savings", True, BLACK)
+        title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        surface.blit(title_surface, title_rect)
+        info_lines = [
+            f"Your current cash: ${self.game.player.cash:.2f}",
+            f"Your savings balance: ${self.game.player.savings_account.balance:.2f}",
+            "",
+            "How much would you like to withdraw?"
+        ]
+        for i, line in enumerate(info_lines):
+            text_surface = self.text_font.render(line, True, BLACK)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 150 + i * 30))
+            surface.blit(text_surface, text_rect)
+        self.amount_input.draw(surface)
+        if self.status_message:
+            status_surface = self.text_font.render(self.status_message, True, self.status_color)
+            status_rect = status_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))
+            surface.blit(status_surface, status_rect)
+        for button in self.buttons:
+            button.draw(surface)
+
+class BankingMenuScreen(Screen):
+    """
+    Submenu for all banking and savings actions.
+    """
+    play_startup_music = False
+    def __init__(self, game):
+        super().__init__(game)
+        self.title_font = pygame.font.Font(None, 48)
+        self.text_font = pygame.font.Font(None, 32)
+        self.buttons = []
+        self.create_buttons()
+        self.status_message = None
+        self.status_color = (0, 0, 0)
+
+    def create_buttons(self):
+        button_specs = [
+            ("Deposit", self.go_to_deposit),
+            ("Withdraw", self.go_to_withdraw),
+            ("View Balance", self.go_to_view_balance),
+            ("View Savings", self.go_to_view_savings),
+            ("Open Account", self.go_to_open_account),
+            ("Back", self.go_back)
+        ]
+        start_y = 180
+        for i, (label, callback) in enumerate(button_specs):
+            btn = Button(
+                SCREEN_WIDTH // 2 - 100,  # x
+                start_y + i * 60,         # y
+                200,                      # width
+                50,                       # height
+                label,                    # text
+                callback                  # action
+            )
+            self.buttons.append(btn)
+
+    def go_to_deposit(self):
+        self.game.set_screen("deposit")
+
+    def go_to_withdraw(self):
+        self.game.set_screen("withdraw")
+
+    def go_to_view_balance(self):
+        self.game.set_screen("view_balance")
+
+    def go_to_view_savings(self):
+        self.game.set_screen("view_savings")
+
+    def go_to_open_account(self):
+        self.game.set_screen("open_account")
+
+    def go_back(self):
+        self.game.set_screen("main_menu")
+
+    def handle_event(self, event):
+        for button in self.buttons:
+            button.handle_event(event)
+
+    def draw(self, surface):
+        surface.fill(WHITE)
+        title_surface = self.title_font.render("Banking Menu", True, BLACK)
+        title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        surface.blit(title_surface, title_rect)
+        info_lines = [
+            f"Cash: ${self.game.player.cash:.2f}",
+            f"Checking: ${getattr(self.game.player, 'checking_account', None).balance:.2f}" if hasattr(self.game.player, 'checking_account') and self.game.player.checking_account else "Checking: $0.00",
+            f"Savings: ${getattr(self.game.player, 'savings_account', None).balance:.2f}" if hasattr(self.game.player, 'savings_account') and self.game.player.savings_account else "Savings: $0.00"
+        ]
+        for i, line in enumerate(info_lines):
+            text_surface = self.text_font.render(line, True, BLACK)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 140 + i * 30))
+            surface.blit(text_surface, text_rect)
+        for button in self.buttons:
+            button.draw(surface)
+        if self.status_message:
+            status_surface = self.text_font.render(self.status_message, True, self.status_color)
+            status_rect = status_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180))
+            surface.blit(status_surface, status_rect)
