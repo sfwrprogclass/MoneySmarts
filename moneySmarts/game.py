@@ -5,33 +5,61 @@ import pickle
 from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
 from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
 from moneySmarts.screens.base_screens import EndGameScreen
-from moneySmarts.exceptions import GameSaveError
+from moneySmarts.event_manager import EventBus
+from moneySmarts.config_manager import Config
+
+SAVEGAME_VERSION = 1
 
 def tax_refund_effect():
+    """Simulate a tax refund event, returning a random cash amount."""
     return random.randint(100, 1000)
+
 def birthday_gift_effect():
+    """Simulate receiving a birthday gift, returning a random cash amount."""
     return random.randint(20, 200)
+
 def found_money_effect():
+    """Simulate finding money, returning a random cash amount."""
     return random.randint(5, 50)
+
 def bonus_effect(game):
+    """Simulate receiving a work bonus, based on player's salary."""
     return int(game.player.salary * random.uniform(0.01, 0.1)) if game.player.salary > 0 else 0
+
 def car_repair_effect(game):
+    """Simulate a car repair event, returning a negative cash amount if player owns a car."""
     return -random.randint(100, 2000) if any(a.asset_type == "Car" for a in game.player.assets) else 0
+
 def medical_bill_effect():
+    """Simulate a medical bill event, returning a negative cash amount."""
     return -random.randint(50, 5000)
+
 def lost_wallet_effect(game):
+    """Simulate losing a wallet, returning a negative cash amount up to $50 or player's cash."""
     return -min(50, game.player.cash)
+
 def phone_repair_effect():
+    """Simulate a phone repair event, returning a negative cash amount."""
     return -random.randint(50, 300)
 
 class Game:
     """
-    Main game class that manages the game state and logic.
-    Handles player progression, events, finances, and game persistence.
-    """
-    SAVE_VERSION = 1  # Increment this if save file structure changes
+    Main game class that manages the game state, player, and core game logic.
+    Handles the main loop, event processing, finances, and user actions.
 
+    Attributes:
+        player (Player): The player object representing the user's character.
+        current_month (int): The current month in the game timeline.
+        current_year (int): The current year in the game timeline.
+        game_over (bool): Flag indicating if the game has ended.
+        events (dict): Dictionary of possible random events.
+        gui_manager: Reference to the GUI manager (if in GUI mode).
+        paused (bool): Indicates if the game is paused.
+    """
     def __init__(self):
+        """
+        Initialize the Game object, setting up player, time, events, and state.
+        """
         self.player = None
         self.current_month = 1
         self.current_year = 0
@@ -41,31 +69,39 @@ class Game:
         self.paused = False  # Track the paused state
 
     def initialize_events(self):
-        """Initialize the random events that can occur during gameplay."""
+        """
+        Initialize the random events that can occur during gameplay.
+        Returns:
+            dict: Dictionary containing lists of positive and negative events.
+        """
         # Define possible random events
         events = {
             "positive": [
                 {"name": "Tax Refund", "description": "You received a tax refund!", "cash_effect": tax_refund_effect},
                 {"name": "Birthday Gift", "description": "You received money as a birthday gift!", "cash_effect": birthday_gift_effect},
                 {"name": "Found Money", "description": "You found money on the ground!", "cash_effect": found_money_effect},
-                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": bonus_effect},
+                {"name": "Bonus", "description": "You received a bonus at work!", "cash_effect": lambda: bonus_effect(self)},
             ],
             "negative": [
-                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": car_repair_effect},
+                {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": lambda: car_repair_effect(self)},
                 {"name": "Medical Bill", "description": "You have unexpected medical expenses.", "cash_effect": medical_bill_effect},
-                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lost_wallet_effect},
+                {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lambda: lost_wallet_effect(self)},
                 {"name": "Phone Repair", "description": "Your phone screen cracked.", "cash_effect": phone_repair_effect},
             ]
         }
         return events
 
     def start_game(self):
-        """Start a new game in text mode (legacy)."""
+        """
+        Start a new game in text mode (legacy mode).
+        Prompts for player name and initial choices, then enters the main loop.
+        """
         self.clear_screen()
         print("=" * 60)
         print("WELCOME TO MONEY SMARTZ: THE FINANCIAL LIFE SIMULATOR")
         print("=" * 60)
-        print("This game will take you through the financial journey of life, from your first bank account")
+        print("\nInspired by the classic Oregon Trail, this game will take you")
+        print("through the financial journey of life, from your first bank account")
         print("to retirement, with all the ups and downs along the way.")
         print("\nMake wise financial decisions and see how they affect your life!")
         print("\n" + "=" * 60)
@@ -93,33 +129,11 @@ class Game:
         input("\nPress Enter to begin your financial journey...")
         self.game_loop()
 
-    def process_annual_asset_expenses(self):
-        """
-        Deduct annual maintenance, insurance, and property tax for all player assets.
-        Update asset values using depreciation.
-        """
-        from moneySmarts.asset_manager import AssetManager
-        asset_manager = AssetManager()
-        total_expenses = 0
-        for asset in self.player.assets:
-            if asset.asset_type in ["vehicle", "car", "Car"]:
-                costs = asset_manager.get_asset_costs("vehicle", asset.name)
-                value = asset_manager.get_asset_value("vehicle", asset.name, asset.years_owned)
-                asset.value = value
-                if costs:
-                    total_expenses += costs["maintenance"] + costs["insurance"]
-            elif asset.asset_type in ["building", "home", "House", "Condo"]:
-                costs = asset_manager.get_asset_costs("building", asset.name)
-                value = asset_manager.get_asset_value("building", asset.name, asset.years_owned)
-                asset.value = value
-                if costs:
-                    total_expenses += costs["maintenance"] + costs["insurance"] + costs["property_tax"]
-        self.player.cash -= total_expenses
-        if self.gui_manager:
-            self.gui_manager.show_message(f"Annual asset expenses deducted: ${total_expenses}")
-
     def game_loop(self):
-        """Main game loop for text mode (legacy)."""
+        """
+        Main game loop for text mode (legacy).
+        Advances time, processes finances, triggers events, and handles user actions.
+        """
         while not self.game_over:
             self.current_month += 1
             if self.current_month > 12:
@@ -127,23 +141,19 @@ class Game:
                 self.current_year += 1
                 self.player.age += 1
 
+                # Apply interest to savings
+                if self.player.bank_account and self.player.bank_account.account_type == "Savings":
+                    self.player.bank_account.apply_interest()
+
                 # Age assets
                 for asset in self.player.assets:
                     asset.age_asset()
 
-                # Deduct annual asset expenses and update values
-                self.process_annual_asset_expenses()
-
-            # Apply savings interest monthly (not just annually)
-            if self.player.bank_account and self.player.bank_account.account_type == "Savings":
-                self.player.bank_account.apply_interest()
-
-            # Process monthly income and expenses (only every 3 months to reduce frequency)
-            if self.current_month % 3 == 0:
-                self.process_monthly_finances()
+            # Process monthly income and expenses
+            self.process_monthly_finances()
 
             # Random events
-            if random.random() < 0.15:  # Reduced from 30% to 15% chance of an event each month
+            if random.random() < 0.3:  # 30% chance of an event each month
                 self.trigger_random_event()
 
             # Life stage events based on age
@@ -154,7 +164,7 @@ class Game:
             self.get_player_action()
 
             # Check game over conditions
-            if self.player.age >= 65:  # Retirement age
+            if self.player.age >= Config.get("retirement_age", 65):  # Configurable
                 self.end_game("retirement")
 
     def process_monthly_finances(self):
@@ -202,21 +212,20 @@ class Game:
                 print("You missed your credit card payment. Your credit score has been severely affected.")
 
         # Process living expenses
-        living_expenses = 1000  # Base living expenses
+        living_expenses = Config.get("base_living_expenses", 1000)  # Configurable
 
         if any(a.asset_type == "House" for a in self.player.assets):
-            living_expenses += 500  # Additional expenses for homeowners
+            living_expenses += Config.get("homeowner_expenses", 500)  # Configurable
 
         if any(a.asset_type == "Car" for a in self.player.assets):
-            living_expenses += 200  # Car maintenance and gas
+            living_expenses += Config.get("car_expenses", 200)  # Configurable
 
         if self.player.family:
-            living_expenses += 500 * len(self.player.family)  # Additional expenses per family member
+            living_expenses += Config.get("family_expenses_per_member", 500) * len(self.player.family)  # Configurable
 
-        # Adjust for inflation over time (2% per year)
-        # Cap inflation to prevent unrealistic values over long gameplay
-        inflation_years = min(self.current_year, 30)  # Cap at 30 years of inflation
-        inflation_factor = 1.02 ** inflation_years
+        # Adjust for inflation over time
+        inflation_rate = Config.get("inflation_rate", 0.02)
+        inflation_factor = (1 + inflation_rate) ** self.current_year
         living_expenses *= inflation_factor
 
         # Pay living expenses
@@ -267,59 +276,24 @@ class Game:
                 self.player.credit_score -= 5  # Penalty for missed utility
                 print(f"Missed utility bill: {util['name']}")
 
-        # Process insurance premiums
-        for policy in self.player.insurance_policies:
-            paid = False
-            if self.player.bank_account and self.player.bank_account.balance >= policy.premium:
-                self.player.bank_account.withdraw(policy.premium)
-                paid = True
-            elif self.player.cash >= policy.premium:
-                self.player.cash -= policy.premium
-                paid = True
-            if not paid:
-                self.player.credit_score -= 5  # Penalty for missed premium
-                print(f"Missed insurance premium for {policy.insurance_type} insurance.")
-
-        # Apply investment returns
-        for investment in self.player.investments:
-            monthly_return = investment.apply_monthly_return()
-            self.player.cash += monthly_return
-            print(f"Investment ({investment.investment_type}) returned ${monthly_return:.2f} this month.")
-
     def trigger_random_event(self):
-        """Trigger a random financial event."""
-        event_type = "positive" if random.random() < 0.5 else "negative"
+        """Trigger a random event and notify listeners via the event system."""
+        event_type = random.choice(["positive", "negative"])
         event = random.choice(self.events[event_type])
-        
-        # Handle different types of cash_effect (function or string identifier)
-        cash_effect_handler = event["cash_effect"]
-        if isinstance(cash_effect_handler, str):
-            # Handle string identifiers
-            if cash_effect_handler == "bonus_effect":
-                cash_effect = bonus_effect(self)
-            elif cash_effect_handler == "car_repair_effect":
-                cash_effect = car_repair_effect(self)
-            elif cash_effect_handler == "lost_wallet_effect":
-                cash_effect = lost_wallet_effect(self)
-            else:
-                cash_effect = 0  # Default if unknown
-        else:
-            # Handle function directly
-            # Check if the function expects a game parameter
-            import inspect
-            if len(inspect.signature(cash_effect_handler).parameters) > 0:
-                cash_effect = cash_effect_handler(self)
-            else:
-                cash_effect = cash_effect_handler()
-        
+        effect = event["cash_effect"]()
+        # Publish the event to the event system
+        EventBus.publish("random_event", event=event, effect=effect, player=self.player)
+        # Apply the effect to the player
+        self.player.cash += effect
+
         # Only show events that have an effect
-        if cash_effect == 0:
+        if effect == 0:
             return
         
         # If in GUI mode, show the event screen
         if self.gui_manager is not None:
             from moneySmarts.screens.random_event_screens import RandomEventScreen
-            event_screen = RandomEventScreen(self, event, cash_effect)
+            event_screen = RandomEventScreen(self, event, effect)
             self.gui_manager.set_screen(event_screen)
             return
         
@@ -329,11 +303,11 @@ class Game:
         print(f"LIFE EVENT: {event['name']}")
         print(event["description"])
         
-        if cash_effect > 0:
-            print(f"You received ${cash_effect}!")
-            self.player.cash += cash_effect
+        if effect > 0:
+            print(f"You received ${effect}!")
+            self.player.cash += effect
         else:
-            print(f"This costs you ${abs(cash_effect)}.")
+            print(f"This costs you ${abs(effect)}.")
             # ... rest of text mode processing ...
         
         print("!" * 60)
@@ -363,7 +337,7 @@ class Game:
 
         # Family planning opportunity
         if self.player.age >= 28 and not self.player.family and self.player.job:
-            if random.random() < 0.03:  # Reduced from 10% to 3% chance each year after 28
+            if random.random() < 0.1:  # 10% chance each year after 28
                 self.family_planning_opportunity()
 
     def high_school_graduation_event(self):
@@ -750,8 +724,6 @@ class Game:
 
         if self.player.bank_account:
             print(f"Bank Account ({self.player.bank_account.account_type}): ${self.player.bank_account.balance:.2f}")
-        if self.player.savings_account:
-            print(f"Savings Account: ${self.player.savings_account.balance:.2f} (Interest Rate: {self.player.savings_account.interest_rate*100:.2f}% annually)")
 
         if self.player.credit_card:
             print(f"Credit Card: ${self.player.credit_card.balance:.2f}/{self.player.credit_card.limit:.2f}")
@@ -806,13 +778,9 @@ class Game:
             actions.append("View bank account")
             actions.append("Deposit to bank")
             actions.append("Withdraw from bank")
-            # Show savings account actions if player has one
-            if self.player.savings_account:
-                actions.append("View savings account")  # New action
-                actions.append("Withdraw from savings")  # New action
-            # If player has a checking but no savings, offer to open savings
-            elif self.player.bank_account and self.player.bank_account.account_type == "Checking":
-                actions.append("Open a savings account")
+
+            if not self.player.debit_card:
+                actions.append("Get a debit card")
 
         # Credit actions
         if not self.player.credit_card and self.player.age >= 18:
@@ -879,57 +847,31 @@ class Game:
             self.view_assets()
         elif action == "Look for a job" or action == "Look for a better job":
             self.look_for_job()
-        elif action == "View savings account":  # New action
-            self.view_savings_account()
-        elif action == "Withdraw from savings":  # New action
-            self.withdraw_from_savings()
-        elif action == "Open a savings account":
-            self.open_savings_account()
 
         # After action, show status again and get another action
         self.display_status()
         self.get_player_action()
 
     def open_bank_account(self):
-        """Open a bank account, with option to open both checking and savings."""
+        """Open a bank account."""
         self.clear_screen()
         print("\n" + "=" * 60)
         print("OPEN A BANK ACCOUNT")
         print("=" * 60)
 
-        print("\nYou can open a checking account for everyday transactions\nor a savings account that earns interest.")
+        print("\nYou can open a checking account for everyday transactions")
+        print("or a savings account that earns interest.")
 
         account_type = self.get_choice("What type of account would you like to open?", ["Checking", "Savings"])
 
-        if account_type == "Checking":
-            self.player.bank_account = BankAccount("Checking")
-            print(f"\nCongratulations! You've opened a Checking account.")
-            # Offer to open a savings account as well
-            open_savings = self.get_choice("Would you also like to open a savings account?", ["Yes", "No"])
-            if open_savings == "Yes":
-                self.player.savings_account = BankAccount("Savings")
-                print(f"\nYou've also opened a Savings account. It will earn {self.player.savings_account.interest_rate*100:.1f}% interest annually.")
-                # Initial deposit for savings
-                savings_deposit = 0
-                while savings_deposit <= 0:
-                    try:
-                        savings_deposit = float(input("\nHow much would you like to deposit into savings initially? $"))
-                        if savings_deposit <= 0:
-                            print("Please enter a positive amount.")
-                        elif savings_deposit > self.player.cash:
-                            print("You don't have that much cash.")
-                            savings_deposit = 0
-                    except ValueError:
-                        print("Please enter a valid number.")
-                self.player.cash -= savings_deposit
-                self.player.savings_account.deposit(savings_deposit)
-                print(f"\nYou've deposited ${savings_deposit:.2f} into your new savings account.")
-                print(f"Your savings account balance is ${self.player.savings_account.balance:.2f}.")
-        else:
-            self.player.bank_account = BankAccount("Savings")
-            print(f"\nCongratulations! You've opened a Savings account. It will earn {self.player.bank_account.interest_rate*100:.1f}% interest annually.")
+        self.player.bank_account = BankAccount(account_type)
 
-        # Initial deposit for main account
+        print(f"\nCongratulations! You've opened a {account_type} account.")
+
+        if account_type == "Savings":
+            print(f"Your account will earn {self.player.bank_account.interest_rate*100:.1f}% interest annually.")
+
+        # Initial deposit
         deposit = 0
         while deposit <= 0:
             try:
@@ -941,8 +883,10 @@ class Game:
                     deposit = 0
             except ValueError:
                 print("Please enter a valid number.")
+
         self.player.cash -= deposit
         self.player.bank_account.deposit(deposit)
+
         print(f"\nYou've deposited ${deposit:.2f} into your new account.")
         print(f"Your account balance is ${self.player.bank_account.balance:.2f}.")
 
@@ -1667,20 +1611,11 @@ class Game:
         """Resume the game from pause (for GUI mode)."""
         self.paused = False
 
-    def save_state(self, slot=1):
-        """
-        Save the current game state to one of three save slots with versioning and error handling.
-        Args:
-            slot (int): The save slot number (1, 2, or 3).
-        Raises:
-            GameSaveError: If saving fails or slot is invalid.
-        """
-        if slot not in (1, 2, 3):
-            raise GameSaveError(f"Invalid save slot: {slot}. Must be 1, 2, or 3.")
-        filename = f"savegame_slot{slot}.dat"
+    def save_state(self, filename="savegame.dat"):
+        """Save the current game state to a file with versioning and error handling."""
         try:
             data = {
-                'version': self.SAVE_VERSION,
+                'version': SAVEGAME_VERSION,
                 'game_state': self._serialize_state()
             }
             with open(filename, "wb") as f:
@@ -1688,11 +1623,31 @@ class Game:
         except Exception as e:
             import logging
             logging.error(f"Failed to save game: {e}")
-            raise GameSaveError(f"Failed to save game: {e}")
-            
+            print(f"Error saving game: {e}")
+
+    def load_state(self, filename="savegame.dat"):
+        """Load the game state from a file, with versioning and error handling for empty/corrupt files."""
+        import os
+        import logging
+        if not os.path.exists(filename):
+            print(f"Save file '{filename}' does not exist.")
+            return
+        if os.path.getsize(filename) == 0:
+            print(f"Save file '{filename}' is empty. Cannot load game state.")
+            return
+        try:
+            with open(filename, "rb") as f:
+                data = pickle.load(f)
+            version = data.get('version', 0)
+            if version != SAVEGAME_VERSION:
+                print(f"Save file version {version} does not match game version {SAVEGAME_VERSION}. Attempting to load anyway...")
+            self._deserialize_state(data['game_state'])
+        except Exception as e:
+            logging.error(f"Error loading game: {e}")
+            print(f"Error loading game: {e}")
+
     def _serialize_state(self):
         """Convert the current game state to a serializable dictionary."""
-        # Don't include self.events as it contains function references that can't be pickled
         return {
             'player': self.player,
             'current_month': self.current_month,
@@ -1701,146 +1656,10 @@ class Game:
             # Add more fields as needed for extensibility
         }
 
-    def load_state(self, slot=1):
-        """
-        Load the game state from one of three save slots, with error handling for empty/corrupt files and versioning.
-        Args:
-            slot (int): The save slot number (1, 2, or 3).
-        Raises:
-            GameSaveError: If loading fails, slot is invalid, or version mismatch.
-        """
-        import os
-        import logging
-        if slot not in (1, 2, 3):
-            raise GameSaveError(f"Invalid load slot: {slot}. Must be 1, 2, or 3.")
-        filename = f"savegame_slot{slot}.dat"
-        if not os.path.exists(filename):
-            raise GameSaveError(f"Save file '{filename}' does not exist.")
-        try:
-            with open(filename, "rb") as f:
-                data = pickle.load(f)
-                version = data.get('version', 0)
-                if version != self.SAVE_VERSION:
-                    logging.warning(f"Save file version {version} does not match game version {self.SAVE_VERSION}. Attempting to load anyway...")
-                self._deserialize_state(data['game_state'])
-        except Exception as e:
-            logging.error(f"Error loading game: {e}")
-            raise GameSaveError(f"Failed to load game: {e}")
-            
     def _deserialize_state(self, state):
         """Restore the game state from a dictionary."""
         self.player = state['player']
         self.current_month = state['current_month']
         self.current_year = state['current_year']
         self.game_over = state['game_over']
-        # Reinitialize events since they weren't serialized
-        self.events = self.initialize_events()
         # Add more fields as needed for extensibility
-
-    def quit(self):
-        """Quit the game (for GUI mode)."""
-        import sys
-        self.game_over = True
-        if self.gui_manager:
-            self.gui_manager.running = False
-        sys.exit()
-
-    def view_savings_account(self):
-        """View savings account details, including interest earned and total balance."""
-        self.clear_screen()
-        print("\n" + "=" * 60)
-        print("SAVINGS ACCOUNT DETAILS")
-        print("=" * 60)
-        if not self.player.bank_account or self.player.bank_account.account_type != "Savings":
-            print("\nYou do not have a savings account.")
-            input("\nPress Enter to continue...")
-            return
-        print(f"\nCurrent Balance: ${self.player.bank_account.balance:.2f}")
-        print(f"Interest Rate: {self.player.bank_account.interest_rate*100:.2f}% annually")
-        # Calculate total interest earned
-        total_interest = sum(t["amount"] for t in self.player.bank_account.transaction_history if t["type"] == "interest")
-        print(f"Total Interest Earned: ${total_interest:.2f}")
-        # Show recent transactions
-        if self.player.bank_account.transaction_history:
-            print("\nRecent Transactions:")
-            for i, transaction in enumerate(reversed(self.player.bank_account.transaction_history[-5:])):
-                if transaction["type"] == "deposit":
-                    print(f"  Deposit: +${transaction['amount']:.2f}")
-                elif transaction["type"] == "withdrawal":
-                    print(f"  Withdrawal: -${transaction['amount']:.2f}")
-                elif transaction["type"] == "interest":
-                    print(f"  Interest: +${transaction['amount']:.2f}")
-        input("\nPress Enter to continue...")
-
-    def withdraw_from_savings(self):
-        """Withdraw money from savings account."""
-        self.clear_screen()
-        print("\n" + "=" * 60)
-        print("WITHDRAW FROM SAVINGS ACCOUNT")
-        print("=" * 60)
-        if not self.player.bank_account or self.player.bank_account.account_type != "Savings":
-            print("\nYou do not have a savings account.")
-            input("\nPress Enter to continue...")
-            return
-        print(f"\nYour current savings balance: ${self.player.bank_account.balance:.2f}")
-        withdrawal = 0
-        while withdrawal <= 0:
-            try:
-                withdrawal = float(input("\nHow much would you like to withdraw? $"))
-                if withdrawal <= 0:
-                    print("Please enter a positive amount.")
-                elif withdrawal > self.player.bank_account.balance:
-                    print("You don't have that much in your savings account.")
-                    withdrawal = 0
-            except ValueError:
-                print("Please enter a valid number.")
-        self.player.bank_account.withdraw(withdrawal)
-        self.player.cash += withdrawal
-        print(f"\nYou've withdrawn ${withdrawal:.2f} from your savings account.")
-        print(f"Your new savings balance is ${self.player.bank_account.balance:.2f}.")
-        print(f"Your cash is now ${self.player.cash:.2f}.")
-        input("\nPress Enter to continue...")
-
-    def open_savings_account(self):
-        """Open a savings account."""
-        self.clear_screen()
-        print("\n" + "=" * 60)
-        print("OPEN A SAVINGS ACCOUNT")
-        print("=" * 60)
-
-        if self.player.savings_account:
-            print("\nYou already have a savings account.")
-            input("\nPress Enter to continue...")
-            return
-
-        print("\nA savings account earns interest on your balance.")
-        print("There is no monthly fee for this account.")
-
-        self.player.savings_account = BankAccount("Savings")
-        print("\nCongratulations! You've opened a savings account.")
-
-        # Initial deposit
-        deposit = 0
-        while deposit <= 0:
-            try:
-                deposit = float(input("\nHow much would you like to deposit initially? $"))
-                if deposit <= 0:
-                    print("Please enter a positive amount.")
-                elif deposit > self.player.cash:
-                    print("You don't have that much cash.")
-                    deposit = 0
-            except ValueError:
-                print("Please enter a valid number.")
-        self.player.cash -= deposit
-        self.player.savings_account.deposit(deposit)
-        print(f"\nYou've deposited ${deposit:.2f} into your new savings account.")
-        print(f"Your savings account balance is ${self.player.savings_account.balance:.2f}.")
-
-        input("\nPress Enter to continue...")
-
-    def restart(self):
-        """Restart the game with a new player and reset the state."""
-        self.__init__()
-        if self.gui_manager:
-            from moneySmarts.screens.game_screen import GameScreen
-            self.gui_manager.set_screen(GameScreen(self))

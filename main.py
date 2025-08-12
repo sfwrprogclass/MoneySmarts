@@ -28,6 +28,8 @@ from moneySmarts.screens.shop_screen import ShopScreen
 from moneySmarts.screens.inventory_screen import InventoryScreen
 from moneySmarts.screens.home_purchase_screen import HomePurchaseScreen
 from moneySmarts.screens.vehicle_purchase_screen import VehiclePurchaseScreen
+from moneySmarts.screens import TitleScreen
+from moneySmarts.exceptions import GameError
 
 # GUI Constants (keep only one set, remove duplicates)
 SCREEN_WIDTH = 1024
