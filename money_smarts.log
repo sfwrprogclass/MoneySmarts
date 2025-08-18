@@ -231,3 +231,123 @@ Traceback (most recent call last):
     self.game.quit()
     ^^^^^^^^^^^^^^
 AttributeError: 'Game' object has no attribute 'quit'
+2025-08-18 12:46:06,305 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 409, in open_banking_menu
+    self.game.gui_manager.set_screen(BankScreen(self.game))
+                                     ~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 30, in __init__
+    self.create_buttons()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 51, in create_buttons
+    btn = Button(
+        SCREEN_WIDTH - 260,  # Right side
+    ...<4 lines>...
+        callback
+    )
+TypeError: Button() takes no arguments
+2025-08-18 12:49:21,653 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 409, in open_banking_menu
+    self.game.gui_manager.set_screen(BankScreen(self.game))
+                                     ~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 30, in __init__
+    self.create_buttons()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 51, in create_buttons
+    btn = Button(BANKING_MENU_BUTTONS,
+        SCREEN_WIDTH - 260,  # Right side
+    ...<4 lines>...
+        callback
+    )
+TypeError: Button() takes no arguments
+2025-08-18 12:52:35,907 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 409, in open_banking_menu
+    self.game.gui_manager.set_screen(BankScreen(self.game))
+                                     ~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 30, in __init__
+    self.create_buttons()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 51, in create_buttons
+    btn = Button(
+        SCREEN_WIDTH - 260,  # Right side
+    ...<4 lines>...
+        callback
+    )
+TypeError: Button() takes no arguments
+2025-08-18 12:55:12,928 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 409, in open_banking_menu
+    self.game.gui_manager.set_screen(BankScreen(self.game))
+                                     ~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 30, in __init__
+    self.create_buttons()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 51, in create_buttons
+    btn = Button(
+        SCREEN_WIDTH - 260,  # Right side
+    ...<4 lines>...
+        callback
+    )
+TypeError: Button() takes no arguments
+2025-08-18 13:56:34,198 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 212, in run
+    self.current_screen.draw(self.screen)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\financial_screens.py", line 1935, in draw
+    f"Current Balance: ${account.balance:.2f}",
+                         ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'balance'

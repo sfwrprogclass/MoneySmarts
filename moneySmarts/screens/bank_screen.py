@@ -54,7 +54,7 @@ class BankScreen(Screen):
                 200,
                 50,
                 label,
-                callback
+                action=callback
             )
             self.buttons.append(btn)
 
@@ -88,27 +88,15 @@ class BankScreen(Screen):
         self.game.gui_manager.set_screen(GameScreen(self.game))
 
     def handle_events(self, events):
-        super().handle_events(events)
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_click = False
+        # Handle ESC to go back to the game screen
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                print(f"[DEBUG] Mouse button down at {mouse_pos}")
-                mouse_click = True
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 print("[DEBUG] ESC pressed, going back.")
                 self.go_back()
-        # Only trigger click for the frame the button is pressed
-        if mouse_click:
-            for button in self.buttons:
-                print(f"[DEBUG] Checking button '{button.text}' at {button.rect}")
-                action = button.update(mouse_pos, mouse_click)
-                if callable(action):
-                    print(f"[DEBUG] Button '{button.text}' clicked, calling action.")
-                    action()  # Call the button's callback
-        else:
-            for button in self.buttons:
-                button.update(mouse_pos, False)
+                return
+        # Defer button handling to base class which uses the shared Button API
+        super().handle_events(events)
+
     def draw(self, surface):
         # Draw the background image
         bg_image = pygame.image.load(os.path.join(ASSETS_DIR, 'images', 'Bank_Screen.png'))
