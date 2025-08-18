@@ -140,8 +140,7 @@ class ShopScreen(Screen):
         acct = self.game.player.bank_account
         price = self.selected_item['price']
         bank_before = acct.balance if acct else 0
-        if acct and acct.balance >= price:
-            acct.withdraw(price)
+        if acct and acct.withdraw(price):
             bank_after = acct.balance
             self.game.player.inventory.append(self.selected_item['name'])
             if 'recurring' in self.selected_item:
@@ -155,10 +154,10 @@ class ShopScreen(Screen):
             )
             self.show_payment_popup = False
             self.show_confirmation_popup = True
-            # Automatically return to main shop menu after confirmation
-            self.selected_item = None
-            self.show_confirmation_popup = False
-            self.message = "Purchase successful!"
+            # Remove these lines to allow confirmation popup to show
+            # self.selected_item = None
+            # self.show_confirmation_popup = False
+            # self.message = "Purchase successful!"
         else:
             self.show_insufficient_funds_popup(self.selected_item['name'], price, bank_before)
 
@@ -365,4 +364,3 @@ class ShopScreen(Screen):
                 self.message = ""
                 self.game.gui_manager.set_screen(ShopScreen(self.game))
                 return
-        super().handle_event(event)

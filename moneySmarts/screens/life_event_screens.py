@@ -6,6 +6,7 @@ from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.models import Loan, Asset, Card
 from moneySmarts.image_manager import image_manager
+from moneySmarts.images import get_image_path
 
 BROWN = (139, 69, 19)
 
@@ -21,9 +22,10 @@ class HighSchoolGraduationScreen(Screen):
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
         self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
 
-        # Load pixel art assets
-        self.pixel_bg = pygame.image.load(os.path.join(ASSETS_DIR, 'Life-Event-Green.jpg')).convert()
-        self.pixel_cap = pygame.image.load(os.path.join(ASSETS_DIR, 'graduation_cap_pixel.png')).convert_alpha() if os.path.exists(os.path.join(ASSETS_DIR, 'graduation_cap_pixel.png')) else None
+        # Load pixel art assets using centralized image references
+        self.pixel_bg = pygame.image.load(get_image_path("LIFE_EVENT_GREEN")).convert()
+        cap_path = get_image_path("GRADUATION_CAP")
+        self.pixel_cap = pygame.image.load(cap_path).convert_alpha() if os.path.exists(cap_path) else None
 
         # Buttons
         college_button = Button(
@@ -206,6 +208,10 @@ class HighSchoolGraduationScreen(Screen):
             if callable(action):
                 action()
                 return
+
+    def show_insufficient_funds_popup(self, param, cost, available):
+        pass
+
 
 class CollegeGraduationScreen(Screen):
     """
@@ -773,7 +779,8 @@ class HousingScreen(Screen):
             # Fall back to simple drawing (existing code)
             self.draw_simple_house(surface, x + width // 2, y + height // 2, width, height)
 
-    def draw_simple_house(self, surface, center_x, center_y, width=150, height=100):
+    @staticmethod
+    def draw_simple_house(surface, center_x, center_y, width=150, height=100):
         """
         Draw a simple house using pygame primitives (fallback).
         """
@@ -1159,7 +1166,8 @@ class FamilyPlanningScreen(Screen):
         for button in self.buttons:
             button.draw(surface)
 
-    def draw_stick_figure(self, surface, x, y, size, is_male=True, is_child=False):
+    @staticmethod
+    def draw_stick_figure(surface, x, y, size, is_male=True, is_child=False):
         """Draw a simple stick figure."""
         # Head
         head_radius = size // 4
@@ -1198,7 +1206,8 @@ class FamilyPlanningScreen(Screen):
                 (x + arm_length, y - size // 2 + head_radius * 2 + body_length + leg_length // 2)
             ], 2)
 
-    def distribute_children(self, num_children, center_x, y, width):
+    @staticmethod
+    def distribute_children(num_children, center_x, y, width):
         """Calculate positions for children stick figures."""
         positions = []
 

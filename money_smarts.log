@@ -172,3 +172,62 @@ Traceback (most recent call last):
   File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 33, in draw
     pygame.draw.rect(surface, color, self.rect)
 TypeError: invalid color argument
+2025-08-13 20:02:58,408 ERROR root BankAccount withdraw error: Insufficient funds or invalid withdrawal amount.
+2025-08-13 20:02:58,410 ERROR root Game error: Withdrawal failed: Insufficient funds or invalid withdrawal amount.
+2025-08-16 11:07:18,124 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 391, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 408, in open_banking_menu
+    self.game.gui_manager.set_screen(BankScreen(self.game))
+                                     ~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 26, in __init__
+    self.create_buttons()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\bank_screen.py", line 42, in create_buttons
+    start_y = int(win_height * 0.23)
+                  ~~~~~~~~~~~^~~~~~
+TypeError: unsupported operand type(s) for *: 'NoneType' and 'float'
+2025-08-17 11:53:23,356 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_over_screen.py", line 22, in restart_game
+    self.game.restart()
+    ^^^^^^^^^^^^^^^^^
+AttributeError: 'Game' object has no attribute 'restart'
+2025-08-18 11:31:33,239 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 210, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 134, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 262, in quit_game
+    self.game.quit()
+    ^^^^^^^^^^^^^^
+AttributeError: 'Game' object has no attribute 'quit'

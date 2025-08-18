@@ -2,6 +2,7 @@ import os
 import pygame
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
+from moneySmarts.images import get_image_path
 
 VEHICLE_OPTIONS = [
     {"name": "Used Car", "price": 1200, "desc": "Reliable but basic transportation."},
@@ -17,11 +18,11 @@ class VehiclePurchaseScreen(Screen):
         self.show_popup = False
         self.popup_text = ""
         self.create_buttons()
-        # Load vehicle images
+        # Load vehicle images using centralized image references
         self.vehicle_images = [
-            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_used_car.png')).convert_alpha(),
-            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_sedan.png')).convert_alpha(),
-            pygame.image.load(os.path.join(ASSETS_DIR, 'vehicle_suv.png')).convert_alpha()
+            pygame.image.load(get_image_path("VEHICLE_USED")).convert_alpha(),
+            pygame.image.load(get_image_path("VEHICLE_SEDAN")).convert_alpha(),
+            pygame.image.load(get_image_path("VEHICLE_SUV")).convert_alpha()
         ]
 
     def create_buttons(self):

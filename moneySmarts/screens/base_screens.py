@@ -7,6 +7,7 @@ from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.sound_manager import SoundManager
 from moneySmarts.ui import GUIManager
+from moneySmarts.images import get_image_path
 
 
 class TitleScreen(Screen):
@@ -20,12 +21,11 @@ class TitleScreen(Screen):
         root_dir = os.path.dirname(os.path.dirname(current_dir))
         assets_dir = os.path.join(root_dir, 'assets')
         font_path = os.path.join(assets_dir, PIXEL_FONT)
-        title_image_path = os.path.join(assets_dir, TITLE_IMAGE)
-        
-        # Try to load title image
+
+        # Try to load title image using centralized image reference
         self.title_image = None
         try:
-            self.title_image = pygame.image.load(title_image_path).convert_alpha()
+            self.title_image = pygame.image.load(get_image_path("TITLE_BG")).convert_alpha()
             # Scale image proportionally
             orig_width, orig_height = self.title_image.get_size()
             scale_factor = min(SCREEN_WIDTH * 0.8 / orig_width, 100 / orig_height)

@@ -21,7 +21,8 @@ class GameOverScreen(Screen):
     def restart_game(self):
         self.game.restart()
 
-    def quit_game(self):
+    @staticmethod
+    def quit_game():
         pygame.quit()
         exit()
 

@@ -1,8 +1,15 @@
 import pygame
 import random
-from pygame.locals import *
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
+
+
+def draw_text(surface, text, x, y, is_title=False):
+    """Helper method to draw text."""
+    font = pygame.font.SysFont('Arial', FONT_LARGE if is_title else FONT_MEDIUM)
+    text_surface = font.render(text, True, BLACK)
+    surface.blit(text_surface, (x, y))
+
 
 class GameScreen(Screen):
     """
@@ -12,6 +19,7 @@ class GameScreen(Screen):
     
     def __init__(self, game):
         super().__init__(game)
+        self.utility_pay_btn = None
         self.create_buttons()
         self.show_utility_popup = False
         self.utility_bills = [
@@ -290,53 +298,53 @@ class GameScreen(Screen):
         info_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
 
         # Name and education
-        self.draw_text(surface, f"Name: {self.game.player.name}", 20, 100)
-        self.draw_text(surface, f"Education: {self.game.player.education}", 20, 130)
+        draw_text(surface, f"Name: {self.game.player.name}", 20, 100)
+        draw_text(surface, f"Education: {self.game.player.education}", 20, 130)
 
         # Job and salary
         job_text = f"Job: {self.game.player.job if self.game.player.job else 'Unemployed'}"
-        self.draw_text(surface, job_text, 20, 160)
+        draw_text(surface, job_text, 20, 160)
 
         if self.game.player.job:
             salary_text = f"Salary: ${self.game.player.salary}/year (${self.game.player.salary/12:.2f}/month)"
-            self.draw_text(surface, salary_text, 40, 190)
+            draw_text(surface, salary_text, 40, 190)
 
         # Financial info
-        self.draw_text(surface, f"Cash: ${self.game.player.cash:.2f}", 20, 230)
+        draw_text(surface, f"Cash: ${self.game.player.cash:.2f}", 20, 230)
 
         if self.game.player.bank_account:
             bank_text = f"Bank Account ({self.game.player.bank_account.account_type}): ${self.game.player.bank_account.balance:.2f}"
-            self.draw_text(surface, bank_text, 20, 260)
+            draw_text(surface, bank_text, 20, 260)
 
         if self.game.player.credit_card:
             credit_text = f"Credit Card: ${self.game.player.credit_card.balance:.2f}/{self.game.player.credit_card.limit:.2f}"
-            self.draw_text(surface, credit_text, 20, 290)
+            draw_text(surface, credit_text, 20, 290)
 
-        self.draw_text(surface, f"Credit Score: {self.game.player.credit_score}", 20, 320)
+        draw_text(surface, f"Credit Score: {self.game.player.credit_score}", 20, 320)
 
         # Loans
         if self.game.player.loans:
-            self.draw_text(surface, "LOANS:", 400, 100)
+            draw_text(surface, "LOANS:", 400, 100)
             for i, loan in enumerate(self.game.player.loans):
                 loan_text = f"{loan.loan_type}: ${loan.current_balance:.2f} (${loan.monthly_payment:.2f}/month)"
-                self.draw_text(surface, loan_text, 420, 130 + i * 30)
+                draw_text(surface, loan_text, 420, 130 + i * 30)
 
         # Assets
         if self.game.player.assets:
-            self.draw_text(surface, "ASSETS:", 400, 230)
+            draw_text(surface, "ASSETS:", 400, 230)
             for i, asset in enumerate(self.game.player.assets):
                 asset_text = f"{asset.name}: ${asset.current_value:.2f} ({asset.condition})"
-                self.draw_text(surface, asset_text, 420, 260 + i * 30)
+                draw_text(surface, asset_text, 420, 260 + i * 30)
 
         # Family
         if self.game.player.family:
-            self.draw_text(surface, "FAMILY:", 700, 100)
+            draw_text(surface, "FAMILY:", 700, 100)
             for i, member in enumerate(self.game.player.family):
                 if member["relation"] == "Spouse":
                     family_text = f"Spouse: Age {member['age'] + self.game.current_year}"
                 else:
                     family_text = f"{member['relation']}: {member['name']}, Age {member['age'] + self.game.current_year}"
-                self.draw_text(surface, family_text, 720, 130 + i * 30)
+                draw_text(surface, family_text, 720, 130 + i * 30)
 
         # Calculate and display net worth
         cash = self.game.player.cash
@@ -379,12 +387,6 @@ class GameScreen(Screen):
             self.utility_pay_btn.draw(surface)
             self.utility_skip_btn.draw(surface)
 
-    def draw_text(self, surface, text, x, y, is_title=False):
-        """Helper method to draw text."""
-        font = pygame.font.SysFont('Arial', FONT_LARGE if is_title else FONT_MEDIUM)
-        text_surface = font.render(text, True, BLACK)
-        surface.blit(text_surface, (x, y))
-
     def handle_events(self, events):
         """Handle events for the game screen."""
         super().handle_events(events)
@@ -403,8 +405,8 @@ class GameScreen(Screen):
                 return
 
     def open_banking_menu(self):
-        from moneySmarts.screens.financial_screens import BankingMenuScreen
-        self.game.gui_manager.set_screen(BankingMenuScreen(self.game))
+        from moneySmarts.screens.bank_screen import BankScreen
+        self.game.gui_manager.set_screen(BankScreen(self.game))
 
     def open_savings_account(self):
         """Open a savings account screen."""

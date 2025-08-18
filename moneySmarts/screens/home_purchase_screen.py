@@ -2,6 +2,7 @@ import pygame
 import os
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
+from moneySmarts.images import get_image_path
 
 HOME_OPTIONS = [
     {"name": "Starter Home", "price": 3000, "desc": "A cozy starter home. Affordable and simple."},
@@ -17,12 +18,11 @@ class HomePurchaseScreen(Screen):
         self.show_popup = False
         self.popup_text = ""
         self.create_buttons()
-        # Load home images
-        # Use ASSETS_DIR from constants instead of calculating it
+        # Load home images using centralized image references
         self.home_images = [
-            pygame.image.load(os.path.join(ASSETS_DIR, 'home_starter.png')).convert_alpha(),
-            pygame.image.load(os.path.join(ASSETS_DIR, 'home_family.png')).convert_alpha(),
-            pygame.image.load(os.path.join(ASSETS_DIR, 'home_luxury.png')).convert_alpha()
+            pygame.image.load(get_image_path("HOME_STARTER")).convert_alpha(),
+            pygame.image.load(get_image_path("HOME_FAMILY")).convert_alpha(),
+            pygame.image.load(get_image_path("HOME_LUXURY")).convert_alpha()
         ]
 
     def create_buttons(self):

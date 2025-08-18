@@ -44,6 +44,28 @@ def phone_repair_effect():
     """Simulate a phone repair event, returning a negative cash amount."""
     return -random.randint(50, 300)
 
+
+def clear_screen():
+    """Clear the console screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def get_choice(prompt, choices):
+    """Get a choice from the player from a list of options."""
+    print(f"\n{prompt}")
+    for i, choice in enumerate(choices):
+        print(f"{i+1}. {choice}")
+
+    selection = 0
+    while selection < 1 or selection > len(choices):
+        try:
+            selection = int(input(f"\nEnter your choice (1-{len(choices)}): "))
+        except ValueError:
+            print("Please enter a valid number.")
+
+    return choices[selection-1]
+
+
 class Game:
     """
     Main game class that manages the game state, player, and core game logic.
@@ -99,7 +121,7 @@ class Game:
         Prompts for player name and initial choices, then enters the main loop.
         Implements error handling and logging for robustness.
         """
-        self.clear_screen()
+        clear_screen()
         print("=" * 60)
         print("WELCOME TO MONEY SMARTZ: THE FINANCIAL LIFE SIMULATOR")
         print("=" * 60)
@@ -120,14 +142,14 @@ class Game:
         print(f"\nWelcome, {self.player.name}! You're a 16-year-old high school student.")
         print("Your parents suggest that you should open your first bank account.")
         try:
-            choice = self.get_choice("Do you want to open a bank account?", ["Yes", "No"])
+            choice = get_choice("Do you want to open a bank account?", ["Yes", "No"])
             if choice == "Yes":
                 self.player.bank_account = BankAccount()
                 self.player.bank_account.deposit(50)  # Parents give you $50 to start
                 print("\nCongratulations! You've opened your first checking account.")
                 print("Your parents deposited $50 to get you started.")
 
-                choice = self.get_choice("Would you like a debit card with your account?", ["Yes", "No"])
+                choice = get_choice("Would you like a debit card with your account?", ["Yes", "No"])
                 if choice == "Yes":
                     self.player.debit_card = Card("Debit")
                     print("\nYou now have a debit card linked to your checking account.")
@@ -310,7 +332,7 @@ class Game:
             return
         
         # Otherwise, text mode
-        self.clear_screen()
+        clear_screen()
         print("\n" + "!" * 60)
         print(f"LIFE EVENT: {event['name']}")
         print(event["description"])
@@ -354,7 +376,7 @@ class Game:
 
     def high_school_graduation_event(self):
         """Handle the high school graduation event."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: HIGH SCHOOL GRADUATION")
         print("=" * 60)
@@ -365,7 +387,7 @@ class Game:
                   "Go to trade school (costs $10,000 for 2 years)",
                   "Start working full-time"]
 
-        choice = self.get_choice("What would you like to do?", choices)
+        choice = get_choice("What would you like to do?", choices)
 
         if choice == choices[0]:  # College
             print("\nYou've decided to go to college. This is a significant investment")
@@ -431,7 +453,7 @@ class Game:
 
     def college_graduation_event(self):
         """Handle the college graduation event."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: COLLEGE GRADUATION")
         print("=" * 60)
@@ -452,7 +474,7 @@ class Game:
 
     def job_opportunity_event(self):
         """Handle job opportunities."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: JOB OPPORTUNITY")
         print("=" * 60)
@@ -504,14 +526,14 @@ class Game:
 
     def car_purchase_opportunity(self):
         """Handle car purchase opportunity."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: CAR PURCHASE OPPORTUNITY")
         print("=" * 60)
         print("\nYou're now at an age where having your own car could be beneficial.")
         print("Would you like to look at some car options?")
 
-        choice = self.get_choice("Do you want to buy a car?", ["Yes", "No"])
+        choice = get_choice("Do you want to buy a car?", ["Yes", "No"])
 
         if choice == "Yes":
             # Car options
@@ -545,7 +567,7 @@ class Game:
                 payment_options.append("Bank Account")
             payment_options.append("Auto Loan")
 
-            payment_choice = self.get_choice("Select payment method:", payment_options)
+            payment_choice = get_choice("Select payment method:", payment_options)
 
             if payment_choice == "Cash" and self.player.cash >= selected_car['value']:
                 self.player.cash -= selected_car['value']
@@ -580,14 +602,14 @@ class Game:
 
     def house_purchase_opportunity(self):
         """Handle house purchase opportunity."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: HOUSE PURCHASE OPPORTUNITY")
         print("=" * 60)
         print("\nYou're now at a stage in life where buying a house could be a good investment.")
         print("Would you like to look at some housing options?")
 
-        choice = self.get_choice("Do you want to buy a house?", ["Yes", "No"])
+        choice = get_choice("Do you want to buy a house?", ["Yes", "No"])
 
         if choice == "Yes":
             # House options
@@ -633,7 +655,7 @@ class Game:
             if self.player.bank_account and self.player.bank_account.balance >= down_payment:
                 payment_options.append("Bank Account")
 
-            payment_choice = self.get_choice("How would you like to pay the down payment?", payment_options)
+            payment_choice = get_choice("How would you like to pay the down payment?", payment_options)
 
             if payment_choice == "Cash":
                 self.player.cash -= down_payment
@@ -670,14 +692,14 @@ class Game:
 
     def family_planning_opportunity(self):
         """Handle family planning opportunity."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: FAMILY PLANNING")
         print("=" * 60)
         print("\nYou've reached a stage in life where starting a family might be a consideration.")
         print("Starting a family will increase your monthly expenses but can bring joy to your life.")
 
-        choice = self.get_choice("Would you like to start a family?", ["Yes", "No"])
+        choice = get_choice("Would you like to start a family?", ["Yes", "No"])
 
         if choice == "Yes":
             # Add a spouse
@@ -697,7 +719,7 @@ class Game:
                 print("Your spouse doesn't currently have a job.")
 
             # Ask about children
-            child_choice = self.get_choice("Would you like to have children?", ["Yes", "No"])
+            child_choice = get_choice("Would you like to have children?", ["Yes", "No"])
 
             if child_choice == "Yes":
                 num_children = random.randint(1, 3)  # Random number of children
@@ -720,7 +742,7 @@ class Game:
 
     def display_status(self):
         """Display the player's current status (text mode)."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print(f"MONTH: {self.current_month}/YEAR: {self.current_year + 2023}")
         print(f"AGE: {self.player.age}")
@@ -866,7 +888,7 @@ class Game:
 
     def open_bank_account(self):
         """Open a bank account."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("OPEN A BANK ACCOUNT")
         print("=" * 60)
@@ -874,7 +896,7 @@ class Game:
         print("\nYou can open a checking account for everyday transactions")
         print("or a savings account that earns interest.")
 
-        account_type = self.get_choice("What type of account would you like to open?", ["Checking", "Savings"])
+        account_type = get_choice("What type of account would you like to open?", ["Checking", "Savings"])
 
         self.player.bank_account = BankAccount(account_type)
 
@@ -904,7 +926,7 @@ class Game:
 
         # Offer debit card
         if account_type == "Checking":
-            choice = self.get_choice("Would you like a debit card with your account?", ["Yes", "No"])
+            choice = get_choice("Would you like a debit card with your account?", ["Yes", "No"])
             if choice == "Yes":
                 self.player.debit_card = Card("Debit")
                 print("\nYou now have a debit card linked to your checking account.")
@@ -913,7 +935,7 @@ class Game:
 
     def view_bank_account(self):
         """View bank account details."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("BANK ACCOUNT DETAILS")
         print("=" * 60)
@@ -944,7 +966,7 @@ class Game:
 
     def deposit_to_bank(self):
         """Deposit money to bank account."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("DEPOSIT TO BANK")
         print("=" * 60)
@@ -975,7 +997,7 @@ class Game:
 
     def withdraw_from_bank(self):
         """Withdraw money from bank account."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("WITHDRAW FROM BANK")
         print("=" * 60)
@@ -1006,7 +1028,7 @@ class Game:
 
     def get_debit_card(self):
         """Get a debit card for the bank account."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("GET A DEBIT CARD")
         print("=" * 60)
@@ -1022,7 +1044,7 @@ class Game:
 
     def apply_for_credit_card(self):
         """Apply for a credit card."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("APPLY FOR A CREDIT CARD")
         print("=" * 60)
@@ -1064,7 +1086,7 @@ class Game:
         print(f"\nBased on your credit score of {self.player.credit_score} and income of ${self.player.salary}/year,")
         print(f"you qualify for a credit card with a limit of ${credit_limit:.2f}.")
 
-        choice = self.get_choice("Would you like to accept this credit card offer?", ["Yes", "No"])
+        choice = get_choice("Would you like to accept this credit card offer?", ["Yes", "No"])
 
         if choice == "Yes":
             self.player.credit_card = Card("Credit", credit_limit)
@@ -1078,7 +1100,7 @@ class Game:
 
     def view_credit_card(self):
         """View credit card details."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("CREDIT CARD DETAILS")
         print("=" * 60)
@@ -1111,7 +1133,7 @@ class Game:
 
     def pay_credit_card(self):
         """Make a payment on the credit card."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("PAY CREDIT CARD")
         print("=" * 60)
@@ -1132,7 +1154,7 @@ class Game:
         if min_payment < self.player.credit_card.balance:
             payment_options.insert(1, "Custom Amount")
 
-        payment_choice = self.get_choice("How much would you like to pay?", payment_options)
+        payment_choice = get_choice("How much would you like to pay?", payment_options)
 
         if payment_choice == "Minimum Payment":
             payment_amount = min_payment
@@ -1162,7 +1184,7 @@ class Game:
             input("\nPress Enter to continue...")
             return
 
-        payment_method = self.get_choice("How would you like to pay?", payment_methods)
+        payment_method = get_choice("How would you like to pay?", payment_methods)
 
         # Process payment
         if payment_method == "Cash":
@@ -1188,7 +1210,7 @@ class Game:
 
     def view_loans(self):
         """View loan details."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("LOAN DETAILS")
         print("=" * 60)
@@ -1222,7 +1244,7 @@ class Game:
 
     def make_extra_loan_payment(self):
         """Make an extra payment on a loan."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("MAKE EXTRA LOAN PAYMENT")
         print("=" * 60)
@@ -1281,7 +1303,7 @@ class Game:
             input("\nPress Enter to continue...")
             return
 
-        payment_method = self.get_choice("How would you like to pay?", payment_methods)
+        payment_method = get_choice("How would you like to pay?", payment_methods)
 
         # Process payment
         if payment_method == "Cash":
@@ -1328,7 +1350,7 @@ class Game:
 
     def view_assets(self):
         """View asset details."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("ASSET DETAILS")
         print("=" * 60)
@@ -1357,7 +1379,7 @@ class Game:
 
     def look_for_job(self):
         """Look for a job or a better job."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
         print("JOB SEARCH")
         print("=" * 60)
@@ -1484,28 +1506,9 @@ class Game:
 
         input("\nPress Enter to continue...")
 
-    def clear_screen(self):
-        """Clear the console screen."""
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-    def get_choice(self, prompt, choices):
-        """Get a choice from the player from a list of options."""
-        print(f"\n{prompt}")
-        for i, choice in enumerate(choices):
-            print(f"{i+1}. {choice}")
-
-        selection = 0
-        while selection < 1 or selection > len(choices):
-            try:
-                selection = int(input(f"\nEnter your choice (1-{len(choices)}): "))
-            except ValueError:
-                print("Please enter a valid number.")
-
-        return choices[selection-1]
-
     def end_game(self, reason):
         """End the game and show final stats (text version)."""
-        self.clear_screen()
+        clear_screen()
         print("\n" + "=" * 60)
 
         if reason == "retirement":

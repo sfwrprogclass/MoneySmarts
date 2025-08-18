@@ -68,7 +68,8 @@ class ImageManager:
             logging.error(f"Error loading image {abs_path}: {e}")
             return None
 
-    def export_images_for_unity(self, source_dir, export_dir):
+    @staticmethod
+    def export_images_for_unity(source_dir, export_dir):
         """
         Copy all PNG/JPG images from source_dir to export_dir for Unity use.
         """

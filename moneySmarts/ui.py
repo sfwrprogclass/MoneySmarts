@@ -45,9 +45,13 @@ class Button:
         Returns the action if the button is clicked, None otherwise.
         """
         self.hovered = self.rect.collidepoint(mouse_pos)
-        if self.hovered and mouse_click and self.action:
-            print(f"Button '{self.text}' clicked. Action: {self.action}")
-            return self.action
+        if self.hovered:
+            print(f"[DEBUG] Button '{self.text}' is hovered at {mouse_pos}.")
+        if self.hovered and mouse_click:
+            print(f"[DEBUG] Button '{self.text}' mouse_click detected at {mouse_pos}.")
+            if self.action:
+                print(f"[DEBUG] Button '{self.text}' returning action: {self.action}")
+                return self.action
         return None
 
 class TextInput:
@@ -175,9 +179,12 @@ class GUIManager:
     def set_screen(self, screen):
         """Set the current screen to be displayed."""
         self.current_screen = screen
-        
+        print(f"[DEBUG] set_screen called: switched to {type(screen).__name__}")
+        # Call on_enter if present
+        if hasattr(screen, 'on_enter') and callable(screen.on_enter):
+            screen.on_enter()
         # Handle music based on screen's play_startup_music attribute
-        if screen.play_startup_music:
+        if getattr(screen, 'play_startup_music', False):
             self.sound_manager.play_music('startup_song')
         else:
             self.sound_manager.stop_music()
