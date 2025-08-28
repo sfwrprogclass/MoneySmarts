@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "moneySmarts"
+version = "1.0.0"
+description = "Money Smartz: Financial Life Simulator"
+readme = "README.md"
+authors = [ { name = "nicks" } ]
+requires-python = ">=3.11,<3.13"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
+]
+dependencies = [
+  "pygame~=2.6.1"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "sphinx", "sphinx-rtd-theme"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
