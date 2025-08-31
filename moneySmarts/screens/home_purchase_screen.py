@@ -2,7 +2,6 @@ import pygame
 import os
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
-from moneySmarts.images import get_image_path
 
 HOME_OPTIONS = [
     {"name": "Starter Home", "price": 3000, "desc": "A cozy starter home. Affordable and simple."},
@@ -18,12 +17,7 @@ class HomePurchaseScreen(Screen):
         self.show_popup = False
         self.popup_text = ""
         self.create_buttons()
-        # Load home images using centralized image references
-        self.home_images = [
-            pygame.image.load(get_image_path("HOME_STARTER")).convert_alpha(),
-            pygame.image.load(get_image_path("HOME_FAMILY")).convert_alpha(),
-            pygame.image.load(get_image_path("HOME_LUXURY")).convert_alpha()
-        ]
+        # Removed image loading; we will draw placeholders
 
     def create_buttons(self):
         self.buttons = []
@@ -67,16 +61,30 @@ class HomePurchaseScreen(Screen):
         self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
+    def draw_house_placeholder(self, surface, x, y):
+        # Draw a simple house placeholder at (x, y)
+        body = pygame.Rect(x, y + 20, 120, 80)
+        pygame.draw.rect(surface, LIGHT_BLUE, body, border_radius=6)
+        roof = [(x - 10, y + 20), (x + 60, y - 20), (x + 130, y + 20)]
+        pygame.draw.polygon(surface, RED, roof)
+        # Door
+        pygame.draw.rect(surface, BROWN, (x + 50, y + 60, 20, 40))
+        # Windows
+        pygame.draw.rect(surface, WHITE, (x + 15, y + 40, 20, 20))
+        pygame.draw.rect(surface, WHITE, (x + 85, y + 40, 20, 20))
+        pygame.draw.rect(surface, BLACK, (x + 15, y + 40, 20, 20), 2)
+        pygame.draw.rect(surface, BLACK, (x + 85, y + 40, 20, 20), 2)
+
     def draw(self, surface):
-        surface.fill((220, 240, 255))  # Light blue background for home screen
+        surface.fill(BG_TOP)
         font = pygame.font.SysFont('Arial', FONT_LARGE)
-        title = font.render("Choose Your Home", True, BLUE)
+        title = font.render("Choose Your Home", True, PRIMARY)
         surface.blit(title, (80, 60))
         font_small = pygame.font.SysFont('Arial', FONT_MEDIUM)
         y = 150
         for idx, home in enumerate(HOME_OPTIONS):
-            # Draw home image
-            surface.blit(self.home_images[idx], (30, y))
+            # Draw placeholder house
+            self.draw_house_placeholder(surface, 30, y - 20)
             desc = font_small.render(home['desc'], True, BLACK)
             surface.blit(desc, (500, y+20))
             y += 90
@@ -85,31 +93,31 @@ class HomePurchaseScreen(Screen):
         self.buy_btn.draw(surface)
         self.back_btn.draw(surface)
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        # Show message as popup if not enough cash
+        # Show message as popup if not enough funds
         if self.message == "Not enough cash.":
             popup_rect = pygame.Rect(250, 250, 520, 160)
-            pygame.draw.rect(surface, (255, 220, 220), popup_rect)
-            pygame.draw.rect(surface, RED, popup_rect, 3)
-            msg = msg_font.render(self.message, True, RED)
+            pygame.draw.rect(surface, (255, 240, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, DANGER, popup_rect, 3, border_radius=12)
+            msg = msg_font.render(self.message, True, DANGER)
             surface.blit(msg, (popup_rect.x + 40, popup_rect.y + 40))
             # Draw OK button centered at bottom of popup
             ok_btn_width, ok_btn_height = 140, 40
             ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
             ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
             ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
-            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            pygame.draw.rect(surface, SUCCESS, ok_btn_rect, border_radius=8)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
             self.ok_btn_rect = ok_btn_rect
             return  # Prevent drawing other popups/buttons
         else:
-            msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
+            msg = msg_font.render(self.message, True, DANGER if "Not" in self.message else SUCCESS)
             surface.blit(msg, (80, 420))
         # Draw popup if needed
         if self.show_popup:
             popup_rect = pygame.Rect(200, 180, 500, 280)
-            pygame.draw.rect(surface, (255, 255, 220), popup_rect)
-            pygame.draw.rect(surface, BLUE, popup_rect, 3)
+            pygame.draw.rect(surface, (245, 255, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, ACCENT, popup_rect, 3, border_radius=12)
             lines = self.popup_text.split('\n')
             for i, line in enumerate(lines):
                 line_surf = msg_font.render(line, True, BLACK)
@@ -119,7 +127,7 @@ class HomePurchaseScreen(Screen):
             ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
             ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
             ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
-            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            pygame.draw.rect(surface, SUCCESS, ok_btn_rect, border_radius=8)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
             self.ok_btn_rect = ok_btn_rect

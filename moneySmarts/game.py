@@ -1,105 +1,80 @@
-import random
-import time
 import os
+import random
 import pickle
 import logging
+import sys  # added for interactivity check
 from moneySmarts.models import Player, BankAccount, Card, Loan, Asset
-from moneySmarts.screens.life_event_screens import HousingScreen, FamilyPlanningScreen
-from moneySmarts.screens.base_screens import EndGameScreen
 from moneySmarts.event_manager import EventBus
 from moneySmarts.config_manager import Config
 from moneySmarts.exceptions import GameError, BankAccountError
+from moneySmarts.utils import compute_net_worth
+from moneySmarts.quest import QuestManager  # NEW
 
 SAVEGAME_VERSION = 1
 
+# --- Random event effect helpers ---
 def tax_refund_effect():
-    """Simulate a tax refund event, returning a random cash amount."""
     return random.randint(100, 1000)
 
 def birthday_gift_effect():
-    """Simulate receiving a birthday gift, returning a random cash amount."""
     return random.randint(20, 200)
 
 def found_money_effect():
-    """Simulate finding money, returning a random cash amount."""
     return random.randint(5, 50)
 
 def bonus_effect(game):
-    """Simulate receiving a work bonus, based on player's salary."""
-    return int(game.player.salary * random.uniform(0.01, 0.1)) if game.player.salary > 0 else 0
+    return int(game.player.salary * random.uniform(0.01, 0.1)) if game.player.salary else 0
 
 def car_repair_effect(game):
-    """Simulate a car repair event, returning a negative cash amount if player owns a car."""
     return -random.randint(100, 2000) if any(a.asset_type == "Car" for a in game.player.assets) else 0
 
 def medical_bill_effect():
-    """Simulate a medical bill event, returning a negative cash amount."""
     return -random.randint(50, 5000)
 
 def lost_wallet_effect(game):
-    """Simulate losing a wallet, returning a negative cash amount up to $50 or player's cash."""
     return -min(50, game.player.cash)
 
 def phone_repair_effect():
-    """Simulate a phone repair event, returning a negative cash amount."""
     return -random.randint(50, 300)
 
-
+# --- Console helpers ---
 def clear_screen():
-    """Clear the console screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-
 def get_choice(prompt, choices):
-    """Get a choice from the player from a list of options."""
     print(f"\n{prompt}")
-    for i, choice in enumerate(choices):
-        print(f"{i+1}. {choice}")
-
-    selection = 0
-    while selection < 1 or selection > len(choices):
+    for i, c in enumerate(choices):
+        print(f"{i+1}. {c}")
+    sel = 0
+    while sel < 1 or sel > len(choices):
         try:
-            selection = int(input(f"\nEnter your choice (1-{len(choices)}): "))
+            sel = int(input(f"Enter choice (1-{len(choices)}): "))
         except ValueError:
-            print("Please enter a valid number.")
-
-    return choices[selection-1]
-
+            print("Enter a valid number.")
+    return choices[sel-1]
 
 class Game:
-    """
-    Main game class that manages the game state, player, and core game logic.
-    Handles the main loop, event processing, finances, and user actions.
-
-    Attributes:
-        player (Player): The player object representing the user's character.
-        current_month (int): The current month in the game timeline.
-        current_year (int): The current year in the game timeline.
-        game_over (bool): Flag indicating if the game has ended.
-        events (dict): Dictionary of possible random events.
-        gui_manager: Reference to the GUI manager (if in GUI mode).
-        paused (bool): Indicates if the game is paused.
-    """
     def __init__(self):
-        """
-        Initialize the Game object, setting up player, time, events, and state.
-        """
         self.player = None
         self.current_month = 1
-        self.current_year = 0
+        self.current_year = 0  # offset from 2023
         self.game_over = False
         self.events = self.initialize_events()
-        self.gui_manager = None  # Will be set by the main script
-        self.paused = False  # Track the paused state
+        self.gui_manager = None
+        self.paused = False
+        self.quests = QuestManager(self)  # NEW quest manager
+        self.quest_notifications = []  # recent completed quest titles
+        self.met_mentor = False  # NPC mentor interaction flag
 
+    # Convenience wrapper so quests can call net worth
+    def compute_net_worth(self):
+        if not self.player:
+            return 0
+        return compute_net_worth(self.player)
+
+    # --- Event setup ---
     def initialize_events(self):
-        """
-        Initialize the random events that can occur during gameplay.
-        Returns:
-            dict: Dictionary containing lists of positive and negative events.
-        """
-        # Define possible random events
-        events = {
+        return {
             "positive": [
                 {"name": "Tax Refund", "description": "You received a tax refund!", "cash_effect": tax_refund_effect},
                 {"name": "Birthday Gift", "description": "You received money as a birthday gift!", "cash_effect": birthday_gift_effect},
@@ -108,274 +83,217 @@ class Game:
             ],
             "negative": [
                 {"name": "Car Repair", "description": "Your car needs repairs.", "cash_effect": lambda: car_repair_effect(self)},
-                {"name": "Medical Bill", "description": "You have unexpected medical expenses.", "cash_effect": medical_bill_effect},
+                {"name": "Medical Bill", "description": "Unexpected medical expenses.", "cash_effect": medical_bill_effect},
                 {"name": "Lost Wallet", "description": "You lost your wallet!", "cash_effect": lambda: lost_wallet_effect(self)},
-                {"name": "Phone Repair", "description": "Your phone screen cracked.", "cash_effect": phone_repair_effect},
+                {"name": "Phone Repair", "description": "Phone screen cracked.", "cash_effect": phone_repair_effect},
             ]
         }
-        return events
 
+    # --- Text mode start ---
     def start_game(self):
-        """
-        Start a new game in text mode (legacy mode).
-        Prompts for player name and initial choices, then enters the main loop.
-        Implements error handling and logging for robustness.
-        """
         clear_screen()
-        print("=" * 60)
-        print("WELCOME TO MONEY SMARTZ: THE FINANCIAL LIFE SIMULATOR")
-        print("=" * 60)
-        print("\nInspired by the classic Oregon Trail, this game will take you")
-        print("through the financial journey of life, from your first bank account")
-        print("to retirement, with all the ups and downs along the way.")
-        print("\nMake wise financial decisions and see how they affect your life!")
-        print("\n" + "=" * 60)
+        print("="*60)
+        print("WELCOME TO MONEY SMARTZ")
+        print("="*60)
         try:
-            name = input("\nEnter your name: ")
+            name = input("Enter your name: ").strip()
             if not name:
-                raise GameError("Player name cannot be empty.")
+                raise GameError("Name cannot be empty")
             self.player = Player(name)
         except Exception as e:
-            logging.error(f"Error initializing player: {e}")
-            print("An error occurred while starting the game. Please try again.")
+            logging.error(f"Init error: {e}")
+            print("Error starting game.")
             return
-        print(f"\nWelcome, {self.player.name}! You're a 16-year-old high school student.")
-        print("Your parents suggest that you should open your first bank account.")
+        print(f"Welcome, {self.player.name}! You're 16 and beginning your financial journey.")
         try:
-            choice = get_choice("Do you want to open a bank account?", ["Yes", "No"])
-            if choice == "Yes":
+            if get_choice("Open a bank account?", ["Yes", "No"]) == "Yes":
                 self.player.bank_account = BankAccount()
-                self.player.bank_account.deposit(50)  # Parents give you $50 to start
-                print("\nCongratulations! You've opened your first checking account.")
-                print("Your parents deposited $50 to get you started.")
-
-                choice = get_choice("Would you like a debit card with your account?", ["Yes", "No"])
-                if choice == "Yes":
+                self.player.bank_account.deposit(50)
+                print("Opened checking with $50 start.")
+                if get_choice("Get a debit card?", ["Yes", "No"]) == "Yes":
                     self.player.debit_card = Card("Debit")
-                    print("\nYou now have a debit card linked to your checking account.")
+                    print("Debit card issued.")
         except BankAccountError as e:
-            logging.error(f"Bank account error: {e}")
-            print("Failed to open bank account. Please contact support.")
-        except Exception as e:
-            logging.error(f"Unexpected error: {e}")
-            print("An unexpected error occurred. Please try again.")
-
-        input("\nPress Enter to begin your financial journey...")
+            logging.error(f"Bank error: {e}")
+        input("Press Enter to begin...")
         self.game_loop()
 
+    # --- Core loops ---
     def game_loop(self):
-        """
-        Main game loop for text mode (legacy).
-        Advances time, processes finances, triggers events, and handles user actions.
-        """
         while not self.game_over:
-            self.current_month += 1
-            if self.current_month > 12:
-                self.current_month = 1
-                self.current_year += 1
-                self.player.age += 1
-
-                # Apply interest to savings
-                if self.player.bank_account and self.player.bank_account.account_type == "Savings":
-                    self.player.bank_account.apply_interest()
-
-                # Age assets
-                for asset in self.player.assets:
-                    asset.age_asset()
-
-            # Process monthly income and expenses
-            self.process_monthly_finances()
-
-            # Random events
-            if random.random() < 0.3:  # 30% chance of an event each month
+            self.advance_month()
+            if random.random() < 0.3:
                 self.trigger_random_event()
-
-            # Life stage events based on age
             self.check_life_stage_events()
-
-            # Display status and get player action
             self.display_status()
             self.get_player_action()
-
-            # Check game over conditions
-            if self.player.age >= Config.get("retirement_age", 65):  # Configurable
+            if self.player.age >= Config.get("retirement_age", 65):
                 self.end_game("retirement")
 
+    def advance_month(self):
+        self.current_month += 1
+        if self.current_month > 12:
+            self.current_month = 1
+            self.current_year += 1
+            self.player.age += 1
+            if self.player.bank_account and self.player.bank_account.account_type == "Savings":
+                self.player.bank_account.apply_interest()
+            for asset in self.player.assets:
+                asset.age_asset()
+        # Monthly investment returns
+        for inv in self.player.investments:
+            inv.apply_monthly_return()
+        self.process_monthly_finances()
+
     def process_monthly_finances(self):
-        """Process monthly income and expenses."""
-        # Process income
+        # Income
         if self.player.job:
             monthly_income = self.player.salary / 12
             self.player.cash += monthly_income
-
-            # Auto deposit to bank if account exists
             if self.player.bank_account:
-                deposit_amount = monthly_income * 0.8  # 80% of income goes to bank
-                self.player.bank_account.deposit(deposit_amount)
-                self.player.cash -= deposit_amount
-
-        # Process loan payments
+                auto = monthly_income * 0.8
+                self.player.bank_account.deposit(auto)
+                self.player.cash -= auto
+        # Loans
         for loan in self.player.loans:
-            if self.player.cash >= loan.monthly_payment:
-                self.player.cash -= loan.monthly_payment
-                loan.make_payment(loan.monthly_payment)
-            elif self.player.bank_account and self.player.bank_account.balance >= loan.monthly_payment:
-                self.player.bank_account.withdraw(loan.monthly_payment)
-                loan.make_payment(loan.monthly_payment)
-            elif self.player.credit_card and (self.player.credit_card.balance + loan.monthly_payment) <= self.player.credit_card.limit:
-                self.player.credit_card.charge(loan.monthly_payment)
-                loan.make_payment(loan.monthly_payment)
+            pay = loan.monthly_payment
+            if self.player.cash >= pay:
+                self.player.cash -= pay
+                loan.make_payment(pay)
+            elif self.player.bank_account and self.player.bank_account.balance >= pay:
+                self.player.bank_account.withdraw(pay)
+                loan.make_payment(pay)
+            elif self.player.credit_card and self.player.credit_card.balance + pay <= self.player.credit_card.limit:
+                self.player.credit_card.charge(pay)
+                loan.make_payment(pay)
             else:
-                # Missed payment - credit score impact
                 self.player.credit_score -= 30
-                print(f"You missed a payment on your {loan.loan_type} loan. Your credit score has been affected.")
-
-        # Process credit card minimum payments (5% of balance)
+                print(f"Missed {loan.loan_type} payment.")
+        # Credit card minimum
         if self.player.credit_card and self.player.credit_card.balance > 0:
-            min_payment = max(25, self.player.credit_card.balance * 0.05)  # Minimum $25 or 5% of balance
-
-            if self.player.cash >= min_payment:
-                self.player.cash -= min_payment
-                self.player.credit_card.pay(min_payment)
-            elif self.player.bank_account and self.player.bank_account.balance >= min_payment:
-                self.player.bank_account.withdraw(min_payment)
-                self.player.credit_card.pay(min_payment)
+            min_pay = max(25, self.player.credit_card.balance * 0.05)
+            if self.player.cash >= min_pay:
+                self.player.cash -= min_pay
+                self.player.credit_card.pay(min_pay)
+            elif self.player.bank_account and self.player.bank_account.balance >= min_pay:
+                self.player.bank_account.withdraw(min_pay)
+                self.player.credit_card.pay(min_pay)
             else:
-                # Missed payment - credit score impact
                 self.player.credit_score -= 50
-                print("You missed your credit card payment. Your credit score has been severely affected.")
-
-        # Process living expenses
-        living_expenses = Config.get("base_living_expenses", 1000)  # Configurable
-
+                print("Missed credit card payment.")
+        # Living expenses
+        living = Config.get("base_living_expenses", 1000)
         if any(a.asset_type == "House" for a in self.player.assets):
-            living_expenses += Config.get("homeowner_expenses", 500)  # Configurable
-
+            living += Config.get("homeowner_expenses", 500)
         if any(a.asset_type == "Car" for a in self.player.assets):
-            living_expenses += Config.get("car_expenses", 200)  # Configurable
-
+            living += Config.get("car_expenses", 200)
         if self.player.family:
-            living_expenses += Config.get("family_expenses_per_member", 500) * len(self.player.family)  # Configurable
-
-        # Adjust for inflation over time
-        inflation_rate = Config.get("inflation_rate", 0.02)
-        inflation_factor = (1 + inflation_rate) ** self.current_year
-        living_expenses *= inflation_factor
-
-        # Pay living expenses
-        if self.player.cash >= living_expenses:
-            self.player.cash -= living_expenses
-        elif self.player.bank_account and self.player.bank_account.balance >= living_expenses:
-            self.player.bank_account.withdraw(living_expenses)
-        elif self.player.credit_card and (self.player.credit_card.balance + living_expenses) <= self.player.credit_card.limit:
-            self.player.credit_card.charge(living_expenses)
+            living += Config.get("family_expenses_per_member", 500) * len(self.player.family)
+        infl = Config.get("inflation_rate", 0.02)
+        living *= (1 + infl) ** self.current_year
+        if self.player.cash >= living:
+            self.player.cash -= living
+        elif self.player.bank_account and self.player.bank_account.balance >= living:
+            self.player.bank_account.withdraw(living)
+        elif self.player.credit_card and self.player.credit_card.balance + living <= self.player.credit_card.limit:
+            self.player.credit_card.charge(living)
         else:
-            # Couldn't pay living expenses - game over?
-            print("You couldn't afford your living expenses this month!")
-            # For now, just reduce credit score
             self.player.credit_score -= 20
-
-        # --- Process recurring bills (from items) ---
+            print("Could not cover living expenses.")
+        # Recurring bills
         for bill in self.player.recurring_bills:
+            amt = bill['amount']
             paid = False
-            # Try to pay from bank account or credit card if specified
             if bill.get('source') == 'bank_or_credit':
-                if self.player.bank_account and self.player.bank_account.balance >= bill['amount']:
-                    self.player.bank_account.withdraw(bill['amount'])
-                    paid = True
-                elif self.player.credit_card and (self.player.credit_card.balance + bill['amount']) <= self.player.credit_card.limit:
-                    self.player.credit_card.charge(bill['amount'])
-                    paid = True
-            # Fallback to cash
-            if not paid and self.player.cash >= bill['amount']:
-                self.player.cash -= bill['amount']
-                paid = True
+                if self.player.bank_account and self.player.bank_account.balance >= amt:
+                    self.player.bank_account.withdraw(amt); paid = True
+                elif self.player.credit_card and self.player.credit_card.balance + amt <= self.player.credit_card.limit:
+                    self.player.credit_card.charge(amt); paid = True
+            if not paid and self.player.cash >= amt:
+                self.player.cash -= amt; paid = True
             if not paid:
-                self.player.credit_score -= 10  # Penalty for missed bill
-                print(f"Missed recurring bill: {bill['name']}")
-
-        # --- Process utility bills ---
+                self.player.credit_score -= 10
+                print(f"Missed bill: {bill['name']}")
+        # Utilities
         for util in self.player.utility_bills:
-            paid = False
-            if self.player.bank_account and self.player.bank_account.balance >= util['amount']:
-                self.player.bank_account.withdraw(util['amount'])
-                paid = True
-            elif self.player.credit_card and (self.player.credit_card.balance + util['amount']) <= self.player.credit_card.limit:
-                self.player.credit_card.charge(util['amount'])
-                paid = True
-            if not paid and self.player.cash >= util['amount']:
-                self.player.cash -= util['amount']
-                paid = True
+            amt = util['amount']; paid = False
+            if self.player.bank_account and self.player.bank_account.balance >= amt:
+                self.player.bank_account.withdraw(amt); paid = True
+            elif self.player.credit_card and self.player.credit_card.balance + amt <= self.player.credit_card.limit:
+                self.player.credit_card.charge(amt); paid = True
+            if not paid and self.player.cash >= amt:
+                self.player.cash -= amt; paid = True
             if not paid:
-                self.player.credit_score -= 5  # Penalty for missed utility
-                print(f"Missed utility bill: {util['name']}")
+                self.player.credit_score -= 5
+                print(f"Missed utility: {util['name']}")
+        # After finances, check quest progress
+        newly = self.quests.check_all()
+        if newly:
+            self.quest_notifications.extend([f"Quest Completed: {q.title}" for q in newly])
+            # limit backlog
+            self.quest_notifications = self.quest_notifications[-5:]
 
+    # --- Random events ---
     def trigger_random_event(self):
-        """Trigger a random event and notify listeners via the event system."""
-        event_type = random.choice(["positive", "negative"])
-        event = random.choice(self.events[event_type])
-        effect = event["cash_effect"]()
-        # Publish the event to the event system
+        etypes = [t for t in ["positive", "negative"] if self.events.get(t) and len(self.events[t])]
+        if not etypes:
+            return  # no events defined
+        etype = random.choice(etypes)
+        event_list = self.events[etype]
+        event = random.choice(event_list)
+        effect = event['cash_effect']()
+        # Apply effect (single application) with source priority for negatives
+        if effect > 0:
+            self.player.cash += effect
+        elif effect < 0:
+            cost = -effect
+            if self.player.cash >= cost:
+                self.player.cash -= cost
+            elif self.player.bank_account and self.player.bank_account.balance >= cost:
+                self.player.bank_account.withdraw(cost)
+            elif self.player.credit_card and self.player.credit_card.balance + cost <= self.player.credit_card.limit:
+                self.player.credit_card.charge(cost)
+            else:
+                self.player.credit_score -= 15
         EventBus.publish("random_event", event=event, effect=effect, player=self.player)
-        # Apply the effect to the player
-        self.player.cash += effect
-
-        # Only show events that have an effect
         if effect == 0:
             return
-        
-        # If in GUI mode, show the event screen
         if self.gui_manager is not None:
             from moneySmarts.screens.random_event_screens import RandomEventScreen
-            event_screen = RandomEventScreen(self, event, effect)
-            self.gui_manager.set_screen(event_screen)
+            self.gui_manager.set_screen(RandomEventScreen(self, event, effect))
             return
-        
-        # Otherwise, text mode
         clear_screen()
-        print("\n" + "!" * 60)
-        print(f"LIFE EVENT: {event['name']}")
-        print(event["description"])
-        
+        print("\n!"*30)
+        print(f"EVENT: {event['name']}")
+        print(event['description'])
         if effect > 0:
-            print(f"You received ${effect}!")
-            self.player.cash += effect
+            print(f"You gained ${effect}")
         else:
-            print(f"This costs you ${abs(effect)}.")
-            # ... rest of text mode processing ...
-        
-        print("!" * 60)
-        input("\nPress Enter to continue...")
+            print(f"You paid ${-effect}")
+        print("!"*30)
+        # Only prompt for Enter if running interactively (avoid pytest capture OSError)
+        if sys.stdin and sys.stdin.isatty():
+            try:
+                input("Press Enter...")
+            except Exception:
+                pass
 
+    # --- Life events (text) ---
     def check_life_stage_events(self):
-        """Check for and trigger life stage events based on player age."""
-        # High school graduation
         if self.player.age == 18 and self.player.education == "High School":
             self.high_school_graduation_event()
-
-        # College graduation (if went to college)
         if self.player.age == 22 and self.player.education == "College (In Progress)":
             self.college_graduation_event()
-
-        # First full-time job opportunity
         if self.player.age == 22 and not self.player.job and self.player.education != "College (In Progress)":
             self.job_opportunity_event()
-
-        # Car purchase opportunity
         if self.player.age == 20 and not any(a.asset_type == "Car" for a in self.player.assets):
             self.car_purchase_opportunity()
-
-        # House purchase opportunity
         if self.player.age == 30 and not any(a.asset_type == "House" for a in self.player.assets) and self.player.job:
             self.house_purchase_opportunity()
-
-        # Family planning opportunity
-        if self.player.age >= 28 and not self.player.family and self.player.job:
-            if random.random() < 0.1:  # 10% chance each year after 28
-                self.family_planning_opportunity()
+        if self.player.age >= 28 and not self.player.family and self.player.job and random.random() < 0.1:
+            self.family_planning_opportunity()
 
     def high_school_graduation_event(self):
-        """Handle the high school graduation event."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: HIGH SCHOOL GRADUATION")
@@ -452,7 +370,6 @@ class Game:
         input("\nPress Enter to continue...")
 
     def college_graduation_event(self):
-        """Handle the college graduation event."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: COLLEGE GRADUATION")
@@ -473,7 +390,6 @@ class Game:
         input("\nPress Enter to continue...")
 
     def job_opportunity_event(self):
-        """Handle job opportunities."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: JOB OPPORTUNITY")
@@ -525,7 +441,6 @@ class Game:
         input("\nPress Enter to continue...")
 
     def car_purchase_opportunity(self):
-        """Handle car purchase opportunity."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: CAR PURCHASE OPPORTUNITY")
@@ -601,7 +516,6 @@ class Game:
         input("\nPress Enter to continue...")
 
     def house_purchase_opportunity(self):
-        """Handle house purchase opportunity."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: HOUSE PURCHASE OPPORTUNITY")
@@ -691,7 +605,6 @@ class Game:
         input("\nPress Enter to continue...")
 
     def family_planning_opportunity(self):
-        """Handle family planning opportunity."""
         clear_screen()
         print("\n" + "=" * 60)
         print("LIFE EVENT: FAMILY PLANNING")
@@ -740,941 +653,264 @@ class Game:
 
         input("\nPress Enter to continue...")
 
+    # --- Status & actions (text mode) ---
     def display_status(self):
-        """Display the player's current status (text mode)."""
         clear_screen()
-        print("\n" + "=" * 60)
-        print(f"MONTH: {self.current_month}/YEAR: {self.current_year + 2023}")
-        print(f"AGE: {self.player.age}")
-        print("=" * 60)
-
-        print(f"\nName: {self.player.name}")
-        print(f"Education: {self.player.education}")
-        print(f"Job: {self.player.job if self.player.job else 'Unemployed'}")
-        if self.player.job:
-            print(f"Salary: ${self.player.salary}/year (${self.player.salary/12:.2f}/month)")
-
-        print(f"\nCash: ${self.player.cash:.2f}")
-
+        print(f"MONTH: {self.current_month}/YEAR: {2023 + self.current_year} | AGE: {self.player.age}")
+        print("-"*60)
+        print(f"Name: {self.player.name}  Education: {self.player.education}")
+        job = self.player.job or 'Unemployed'
+        print(f"Job: {job}  Salary: ${self.player.salary}/yr" if self.player.job else f"Job: {job}")
+        print(f"Cash: ${self.player.cash:.2f}")
         if self.player.bank_account:
-            print(f"Bank Account ({self.player.bank_account.account_type}): ${self.player.bank_account.balance:.2f}")
-
+            print(f"Checking/Savings: ${self.player.bank_account.balance:.2f} ({self.player.bank_account.account_type})")
         if self.player.credit_card:
             print(f"Credit Card: ${self.player.credit_card.balance:.2f}/{self.player.credit_card.limit:.2f}")
-
         print(f"Credit Score: {self.player.credit_score}")
-
         if self.player.loans:
-            print("\n--- LOANS ---")
-            for loan in self.player.loans:
-                print(f"{loan.loan_type}: ${loan.current_balance:.2f} remaining (${loan.monthly_payment:.2f}/month)")
-
+            print("Loans:")
+            for ln in self.player.loans:
+                print(f"  {ln.loan_type}: ${ln.current_balance:.2f} @ ${ln.monthly_payment:.2f}/mo")
         if self.player.assets:
-            print("\n--- ASSETS ---")
+            print("Assets:")
             for asset in self.player.assets:
-                print(f"{asset.name}: ${asset.current_value:.2f} ({asset.condition} condition)")
-
-        if self.player.family:
-            print("\n--- FAMILY ---")
-            for member in self.player.family:
-                if member["relation"] == "Spouse":
-                    print(f"Spouse: Age {member['age'] + self.current_year}")
-                else:
-                    print(f"{member['relation']}: {member['name']}, Age {member['age'] + self.current_year}")
-
-        # Calculate and display net worth
-        cash = self.player.cash
-        bank_balance = self.player.bank_account.balance if self.player.bank_account else 0
-        credit_card_debt = self.player.credit_card.balance if self.player.credit_card else 0
-
-        loan_debt = 0
-        for loan in self.player.loans:
-            loan_debt += loan.current_balance
-
-        asset_value = 0
-        for asset in self.player.assets:
-            asset_value += asset.current_value
-
-        net_worth = cash + bank_balance - credit_card_debt - loan_debt + asset_value
-
-        print(f"\nNET WORTH: ${net_worth:.2f}")
-
-        print("\n" + "=" * 60)
+                print(f"  {asset.name}: ${asset.current_value:.2f} ({asset.condition})")
+        nw = compute_net_worth(self.player)
+        print(f"Net Worth: ${nw:.2f}")
+        print("-"*60)
 
     def get_player_action(self):
-        """Get the player's next action (text mode)."""
-        actions = ["Continue to next month"]
-
-        # Banking actions
+        actions = ["Continue"]
         if not self.player.bank_account:
-            actions.append("Open a bank account")
+            actions.append("Open Bank Account")
         else:
-            actions.append("View bank account")
-            actions.append("Deposit to bank")
-            actions.append("Withdraw from bank")
-
+            actions += ["View Account", "Deposit", "Withdraw"]
             if not self.player.debit_card:
-                actions.append("Get a debit card")
-
-        # Credit actions
+                actions.append("Get Debit Card")
         if not self.player.credit_card and self.player.age >= 18:
-            actions.append("Apply for a credit card")
+            actions.append("Apply Credit Card")
         elif self.player.credit_card:
-            actions.append("View credit card")
+            actions.append("View Credit Card")
             if self.player.credit_card.balance > 0:
-                actions.append("Pay credit card")
-
-        # Loan actions
+                actions.append("Pay Credit Card")
         if self.player.loans:
-            actions.append("View loans")
-            actions.append("Make extra loan payment")
-
-        # Asset actions
+            actions += ["View Loans", "Extra Loan Payment"]
         if self.player.assets:
-            actions.append("View assets")
-
-        # Job actions
+            actions.append("View Assets")
         if not self.player.job and self.player.age >= 16:
-            actions.append("Look for a job")
-        elif self.player.job and random.random() < 0.1:  # 10% chance of job opportunity each month
-            actions.append("Look for a better job")
-
-        # Display actions
-        print("\nWhat would you like to do?")
-        for i, action in enumerate(actions):
-            print(f"{i+1}. {action}")
-
-        # Get player choice
-        choice = 0
-        while choice < 1 or choice > len(actions):
+            actions.append("Job Search")
+        elif self.player.job and random.random() < 0.1:
+            actions.append("Job Search")
+        for i,a in enumerate(actions):
+            print(f"{i+1}. {a}")
+        sel = 0
+        while sel < 1 or sel > len(actions):
             try:
-                choice = int(input(f"\nEnter your choice (1-{len(actions)}): "))
+                sel = int(input("Choose action: "))
             except ValueError:
-                print("Please enter a valid number.")
-
-        action = actions[choice-1]
-
-        # Process action
-        if action == "Continue to next month":
+                print("Invalid.")
+        act = actions[sel-1]
+        if act == "Continue":
             return
-        elif action == "Open a bank account":
+        if act == "Open Bank Account":
             self.open_bank_account()
-        elif action == "View bank account":
+        elif act == "View Account":
             self.view_bank_account()
-        elif action == "Deposit to bank":
+        elif act == "Deposit":
             self.deposit_to_bank()
-        elif action == "Withdraw from bank":
+        elif act == "Withdraw":
             self.withdraw_from_bank()
-        elif action == "Get a debit card":
+        elif act == "Get Debit Card":
             self.get_debit_card()
-        elif action == "Apply for a credit card":
+        elif act == "Apply Credit Card":
             self.apply_for_credit_card()
-        elif action == "View credit card":
+        elif act == "View Credit Card":
             self.view_credit_card()
-        elif action == "Pay credit card":
+        elif act == "Pay Credit Card":
             self.pay_credit_card()
-        elif action == "View loans":
+        elif act == "View Loans":
             self.view_loans()
-        elif action == "Make extra loan payment":
+        elif act == "Extra Loan Payment":
             self.make_extra_loan_payment()
-        elif action == "View assets":
+        elif act == "View Assets":
             self.view_assets()
-        elif action == "Look for a job" or action == "Look for a better job":
+        elif act == "Job Search":
             self.look_for_job()
+        input("Press Enter...")
 
-        # After action, show status again and get another action
-        self.display_status()
-        self.get_player_action()
-
+    # --- Basic financial actions (text stubs) ---
     def open_bank_account(self):
-        """Open a bank account."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("OPEN A BANK ACCOUNT")
-        print("=" * 60)
-
-        print("\nYou can open a checking account for everyday transactions")
-        print("or a savings account that earns interest.")
-
-        account_type = get_choice("What type of account would you like to open?", ["Checking", "Savings"])
-
-        self.player.bank_account = BankAccount(account_type)
-
-        print(f"\nCongratulations! You've opened a {account_type} account.")
-
-        if account_type == "Savings":
-            print(f"Your account will earn {self.player.bank_account.interest_rate*100:.1f}% interest annually.")
-
-        # Initial deposit
-        deposit = 0
-        while deposit <= 0:
+        t = get_choice("Account type?", ["Checking", "Savings"])
+        self.player.bank_account = BankAccount(t)
+        dep = 0
+        while dep <= 0:
             try:
-                deposit = float(input("\nHow much would you like to deposit initially? $"))
-                if deposit <= 0:
-                    print("Please enter a positive amount.")
-                elif deposit > self.player.cash:
-                    print("You don't have that much cash.")
-                    deposit = 0
+                dep = float(input("Initial deposit: $"))
             except ValueError:
-                print("Please enter a valid number.")
-
-        self.player.cash -= deposit
-        self.player.bank_account.deposit(deposit)
-
-        print(f"\nYou've deposited ${deposit:.2f} into your new account.")
-        print(f"Your account balance is ${self.player.bank_account.balance:.2f}.")
-
-        # Offer debit card
-        if account_type == "Checking":
-            choice = get_choice("Would you like a debit card with your account?", ["Yes", "No"])
-            if choice == "Yes":
-                self.player.debit_card = Card("Debit")
-                print("\nYou now have a debit card linked to your checking account.")
-
-        input("\nPress Enter to continue...")
+                print("Enter number")
+        self.player.cash -= dep
+        self.player.bank_account.deposit(dep)
 
     def view_bank_account(self):
-        """View bank account details."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("BANK ACCOUNT DETAILS")
-        print("=" * 60)
-
-        print(f"\nAccount Type: {self.player.bank_account.account_type}")
-        print(f"Current Balance: ${self.player.bank_account.balance:.2f}")
-
-        if self.player.bank_account.account_type == "Savings":
-            print(f"Interest Rate: {self.player.bank_account.interest_rate*100:.1f}% annually")
-            annual_interest = self.player.bank_account.balance * self.player.bank_account.interest_rate
-            print(f"Projected Annual Interest: ${annual_interest:.2f}")
-
-        if self.player.debit_card:
-            print("\nYou have a debit card linked to this account.")
-
-        # Show recent transactions
-        if self.player.bank_account.transaction_history:
-            print("\nRecent Transactions:")
-            for i, transaction in enumerate(reversed(self.player.bank_account.transaction_history[-5:])):
-                if transaction["type"] == "deposit":
-                    print(f"  Deposit: +${transaction['amount']:.2f}")
-                elif transaction["type"] == "withdrawal":
-                    print(f"  Withdrawal: -${transaction['amount']:.2f}")
-                elif transaction["type"] == "interest":
-                    print(f"  Interest: +${transaction['amount']:.2f}")
-
-        input("\nPress Enter to continue...")
+        ba = self.player.bank_account
+        print(f"Type: {ba.account_type} Balance: ${ba.balance:.2f}")
 
     def deposit_to_bank(self):
-        """Deposit money to bank account."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("DEPOSIT TO BANK")
-        print("=" * 60)
-
-        print(f"\nYour current cash: ${self.player.cash:.2f}")
-        print(f"Your current bank balance: ${self.player.bank_account.balance:.2f}")
-
-        deposit = 0
-        while deposit <= 0:
-            try:
-                deposit = float(input("\nHow much would you like to deposit? $"))
-                if deposit <= 0:
-                    print("Please enter a positive amount.")
-                elif deposit > self.player.cash:
-                    print("You don't have that much cash.")
-                    deposit = 0
-            except ValueError:
-                print("Please enter a valid number.")
-
-        self.player.cash -= deposit
-        self.player.bank_account.deposit(deposit)
-
-        print(f"\nYou've deposited ${deposit:.2f} into your account.")
-        print(f"Your new account balance is ${self.player.bank_account.balance:.2f}.")
-        print(f"Your remaining cash is ${self.player.cash:.2f}.")
-
-        input("\nPress Enter to continue...")
+        amt = float(input("Deposit amount: $"))
+        if 0 < amt <= self.player.cash:
+            self.player.cash -= amt
+            self.player.bank_account.deposit(amt)
 
     def withdraw_from_bank(self):
-        """Withdraw money from bank account."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("WITHDRAW FROM BANK")
-        print("=" * 60)
-
-        print(f"\nYour current cash: ${self.player.cash:.2f}")
-        print(f"Your current bank balance: ${self.player.bank_account.balance:.2f}")
-
-        withdrawal = 0
-        while withdrawal <= 0:
-            try:
-                withdrawal = float(input("\nHow much would you like to withdraw? $"))
-                if withdrawal <= 0:
-                    print("Please enter a positive amount.")
-                elif withdrawal > self.player.bank_account.balance:
-                    print("You don't have that much in your account.")
-                    withdrawal = 0
-            except ValueError:
-                print("Please enter a valid number.")
-
-        self.player.bank_account.withdraw(withdrawal)
-        self.player.cash += withdrawal
-
-        print(f"\nYou've withdrawn ${withdrawal:.2f} from your account.")
-        print(f"Your new account balance is ${self.player.bank_account.balance:.2f}.")
-        print(f"Your cash is now ${self.player.cash:.2f}.")
-
-        input("\nPress Enter to continue...")
+        amt = float(input("Withdraw amount: $"))
+        if 0 < amt <= self.player.bank_account.balance:
+            self.player.bank_account.withdraw(amt)
+            self.player.cash += amt
 
     def get_debit_card(self):
-        """Get a debit card for the bank account."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("GET A DEBIT CARD")
-        print("=" * 60)
-
-        print("\nA debit card allows you to make purchases directly from your checking account.")
-        print("There is no fee for this card.")
-
-        self.player.debit_card = Card("Debit")
-
-        print("\nYou now have a debit card linked to your checking account.")
-
-        input("\nPress Enter to continue...")
+        if not self.player.debit_card and self.player.bank_account:
+            self.player.debit_card = Card("Debit")
 
     def apply_for_credit_card(self):
-        """Apply for a credit card."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("APPLY FOR A CREDIT CARD")
-        print("=" * 60)
-
-        print("\nA credit card allows you to make purchases on credit.")
-        print("You'll need to make monthly payments, and interest will be charged on unpaid balances.")
-        print("Your credit limit will be based on your credit score and income.")
-
-        # Check eligibility
-        if self.player.age < 18:
-            print("\nSorry, you must be at least 18 years old to apply for a credit card.")
-            input("\nPress Enter to continue...")
-            return
-
-        if not self.player.job:
-            print("\nSorry, you need to have a job to apply for a credit card.")
-            input("\nPress Enter to continue...")
-            return
-
-        # Determine credit limit based on credit score and income
-        base_limit = self.player.salary * 0.2  # 20% of annual income
-
-        if self.player.credit_score >= 750:
-            limit_multiplier = 1.5  # Excellent credit
-        elif self.player.credit_score >= 700:
-            limit_multiplier = 1.2  # Good credit
-        elif self.player.credit_score >= 650:
-            limit_multiplier = 1.0  # Fair credit
-        elif self.player.credit_score >= 600:
-            limit_multiplier = 0.8  # Poor credit
-        else:
-            limit_multiplier = 0.5  # Bad credit
-
-        credit_limit = base_limit * limit_multiplier
-
-        # Round to nearest $100
-        credit_limit = max(500, min(50000, credit_limit))
-
-        print(f"\nBased on your credit score of {self.player.credit_score} and income of ${self.player.salary}/year,")
-        print(f"you qualify for a credit card with a limit of ${credit_limit:.2f}.")
-
-        choice = get_choice("Would you like to accept this credit card offer?", ["Yes", "No"])
-
-        if choice == "Yes":
-            self.player.credit_card = Card("Credit", credit_limit)
-            print("\nCongratulations! You now have a credit card.")
-            print(f"Your credit limit is ${self.player.credit_card.limit:.2f}.")
-            print("Remember to make your payments on time to maintain a good credit score.")
-        else:
-            print("\nYou've declined the credit card offer.")
-
-        input("\nPress Enter to continue...")
+        if not self.player.credit_card:
+            limit = 2000 if self.player.credit_score < 680 else 5000
+            self.player.credit_card = Card("Credit", limit=limit)
 
     def view_credit_card(self):
-        """View credit card details."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("CREDIT CARD DETAILS")
-        print("=" * 60)
-
-        print(f"\nCredit Limit: ${self.player.credit_card.limit:.2f}")
-        print(f"Current Balance: ${self.player.credit_card.balance:.2f}")
-        print(f"Available Credit: ${self.player.credit_card.limit - self.player.credit_card.balance:.2f}")
-
-        # Calculate minimum payment
-        min_payment = max(25, self.player.credit_card.balance * 0.05)  # Minimum $25 or 5% of balance
-
-        if self.player.credit_card.balance > 0:
-            print(f"\nMinimum Payment Due: ${min_payment:.2f}")
-            print("Interest Rate: 18% APR on unpaid balances")
-
-            # Show interest that would be charged
-            monthly_interest = self.player.credit_card.balance * 0.18 / 12
-            print(f"Interest This Month (if unpaid): ${monthly_interest:.2f}")
-
-        # Show recent transactions
-        if self.player.credit_card.transaction_history:
-            print("\nRecent Transactions:")
-            for i, transaction in enumerate(reversed(self.player.credit_card.transaction_history[-5:])):
-                if transaction["type"] == "charge":
-                    print(f"  Charge: +${transaction['amount']:.2f}")
-                elif transaction["type"] == "payment":
-                    print(f"  Payment: -${transaction['amount']:.2f}")
-
-        input("\nPress Enter to continue...")
+        cc = self.player.credit_card
+        print(f"Credit Card Balance: ${cc.balance:.2f} / Limit ${cc.limit:.2f}")
 
     def pay_credit_card(self):
-        """Make a payment on the credit card."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("PAY CREDIT CARD")
-        print("=" * 60)
-
-        print(f"\nCurrent Credit Card Balance: ${self.player.credit_card.balance:.2f}")
-
-        # Calculate minimum payment
-        min_payment = max(25, self.player.credit_card.balance * 0.05)  # Minimum $25 or 5% of balance
-
-        print(f"Minimum Payment Due: ${min_payment:.2f}")
-        print(f"Your Cash: ${self.player.cash:.2f}")
-
-        if self.player.bank_account:
-            print(f"Your Bank Balance: ${self.player.bank_account.balance:.2f}")
-
-        # Payment options
-        payment_options = ["Minimum Payment", "Full Balance"]
-        if min_payment < self.player.credit_card.balance:
-            payment_options.insert(1, "Custom Amount")
-
-        payment_choice = get_choice("How much would you like to pay?", payment_options)
-
-        if payment_choice == "Minimum Payment":
-            payment_amount = min_payment
-        elif payment_choice == "Full Balance":
-            payment_amount = self.player.credit_card.balance
-        else:  # Custom Amount
-            payment_amount = 0
-            while payment_amount < min_payment or payment_amount > self.player.credit_card.balance:
-                try:
-                    payment_amount = float(input(f"\nEnter payment amount (minimum ${min_payment:.2f}): $"))
-                    if payment_amount < min_payment:
-                        print(f"Payment must be at least the minimum payment of ${min_payment:.2f}.")
-                    elif payment_amount > self.player.credit_card.balance:
-                        print(f"Payment cannot exceed your balance of ${self.player.credit_card.balance:.2f}.")
-                except ValueError:
-                    print("Please enter a valid number.")
-
-        # Payment method
-        payment_methods = []
-        if self.player.cash >= payment_amount:
-            payment_methods.append("Cash")
-        if self.player.bank_account and self.player.bank_account.balance >= payment_amount:
-            payment_methods.append("Bank Account")
-
-        if not payment_methods:
-            print("\nYou don't have enough money to make this payment.")
-            input("\nPress Enter to continue...")
+        cc = self.player.credit_card
+        if cc.balance <= 0:
             return
-
-        payment_method = get_choice("How would you like to pay?", payment_methods)
-
-        # Process payment
-        if payment_method == "Cash":
-            self.player.cash -= payment_amount
-            self.player.credit_card.pay(payment_amount)
-            print(f"\nYou paid ${payment_amount:.2f} from your cash.")
-        else:  # Bank Account
-            self.player.bank_account.withdraw(payment_amount)
-            self.player.credit_card.pay(payment_amount)
-            print(f"\nYou paid ${payment_amount:.2f} from your bank account.")
-
-        print(f"Your new credit card balance is ${self.player.credit_card.balance:.2f}.")
-
-        # Credit score improvement for on-time payments
-        if payment_amount >= min_payment:
-            score_increase = min(5, 850 - self.player.credit_score)  # Cap at 850
-            if score_increase > 0:
-                self.player.credit_score += score_increase
-                print(f"\nYour on-time payment has improved your credit score by {score_increase} points.")
-                print(f"Your credit score is now {self.player.credit_score}.")
-
-        input("\nPress Enter to continue...")
+        min_pay = max(25, cc.balance * 0.05)
+        pay = float(input(f"Payment amount (min ${min_pay:.2f}): $"))
+        if pay >= min_pay and pay <= cc.balance and self.player.cash >= pay:
+            self.player.cash -= pay
+            cc.pay(pay)
 
     def view_loans(self):
-        """View loan details."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("LOAN DETAILS")
-        print("=" * 60)
-
-        for i, loan in enumerate(self.player.loans):
-            print(f"\nLoan {i+1}: {loan.loan_type}")
-            print(f"Original Amount: ${loan.original_amount:.2f}")
-            print(f"Current Balance: ${loan.current_balance:.2f}")
-            print(f"Interest Rate: {loan.interest_rate*100:.2f}%")
-            print(f"Term: {loan.term_years} years")
-            print(f"Monthly Payment: ${loan.monthly_payment:.2f}")
-
-            # Calculate payoff date
-            remaining_payments = loan.current_balance / loan.monthly_payment
-            remaining_months = int(remaining_payments)
-            remaining_years = remaining_months // 12
-            remaining_months %= 12
-
-            print(f"Estimated Payoff: {remaining_years} years and {remaining_months} months")
-
-            # Calculate total interest to be paid
-            total_payments = loan.monthly_payment * remaining_payments
-            total_interest = total_payments - loan.current_balance
-
-            print(f"Remaining Interest to be Paid: ${total_interest:.2f}")
-
-            if i < len(self.player.loans) - 1:
-                print("\n" + "-" * 40)
-
-        input("\nPress Enter to continue...")
+        for ln in self.player.loans:
+            print(f"{ln.loan_type}: ${ln.current_balance:.2f} / ${ln.monthly_payment:.2f}/mo")
 
     def make_extra_loan_payment(self):
-        """Make an extra payment on a loan."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("MAKE EXTRA LOAN PAYMENT")
-        print("=" * 60)
-
-        print("\nMaking extra payments on your loans can help you pay them off faster")
-        print("and save money on interest.")
-
-        # Select loan
-        if len(self.player.loans) > 1:
-            print("\nWhich loan would you like to make an extra payment on?")
-            for i, loan in enumerate(self.player.loans):
-                print(f"{i+1}. {loan.loan_type} - ${loan.current_balance:.2f} remaining")
-
-            loan_choice = 0
-            while loan_choice < 1 or loan_choice > len(self.player.loans):
-                try:
-                    loan_choice = int(input(f"\nEnter your choice (1-{len(self.player.loans)}): "))
-                except ValueError:
-                    print("Please enter a valid number.")
-
-            selected_loan = self.player.loans[loan_choice-1]
-        else:
-            selected_loan = self.player.loans[0]
-
-        print(f"\nSelected Loan: {selected_loan.loan_type}")
-        print(f"Current Balance: ${selected_loan.current_balance:.2f}")
-        print(f"Interest Rate: {selected_loan.interest_rate*100:.2f}%")
-        print(f"Regular Monthly Payment: ${selected_loan.monthly_payment:.2f}")
-
-        print(f"\nYour Cash: ${self.player.cash:.2f}")
-        if self.player.bank_account:
-            print(f"Your Bank Balance: ${self.player.bank_account.balance:.2f}")
-
-        # Enter payment amount
-        payment_amount = 0
-        while payment_amount <= 0:
-            try:
-                payment_amount = float(input("\nHow much extra would you like to pay? $"))
-                if payment_amount <= 0:
-                    print("Please enter a positive amount.")
-                elif payment_amount > selected_loan.current_balance:
-                    print(f"Payment cannot exceed your loan balance of ${selected_loan.current_balance:.2f}.")
-                    payment_amount = 0
-            except ValueError:
-                print("Please enter a valid number.")
-
-        # Payment method
-        payment_methods = []
-        if self.player.cash >= payment_amount:
-            payment_methods.append("Cash")
-        if self.player.bank_account and self.player.bank_account.balance >= payment_amount:
-            payment_methods.append("Bank Account")
-
-        if not payment_methods:
-            print("\nYou don't have enough money to make this payment.")
-            input("\nPress Enter to continue...")
+        if not self.player.loans:
             return
-
-        payment_method = get_choice("How would you like to pay?", payment_methods)
-
-        # Process payment
-        if payment_method == "Cash":
-            self.player.cash -= payment_amount
-            selected_loan.make_payment(payment_amount)
-            print(f"\nYou paid ${payment_amount:.2f} from your cash.")
-        else:  # Bank Account
-            self.player.bank_account.withdraw(payment_amount)
-            selected_loan.make_payment(payment_amount)
-            print(f"\nYou paid ${payment_amount:.2f} from your bank account.")
-
-        print(f"Your new loan balance is ${selected_loan.current_balance:.2f}.")
-
-        # Recalculate payoff date
-        if selected_loan.current_balance > 0:
-            remaining_payments = selected_loan.current_balance / selected_loan.monthly_payment
-            remaining_months = int(remaining_payments)
-            remaining_years = remaining_months // 12
-            remaining_months %= 12
-
-            print(f"\nYour extra payment has shortened your loan term!")
-            print(f"New Estimated Payoff: {remaining_years} years and {remaining_months} months")
-
-            # Calculate interest savings
-            original_total = selected_loan.monthly_payment * (selected_loan.term_years * 12)
-            new_total = selected_loan.monthly_payment * remaining_payments + payment_amount
-            savings = original_total - new_total
-
-            print(f"You'll save approximately ${savings:.2f} in interest over the life of the loan.")
-        else:
-            print("\nCongratulations! You've paid off this loan completely!")
-
-            # Remove the loan from the player's loans
-            self.player.loans.remove(selected_loan)
-
-            # Credit score improvement for paying off a loan
-            score_increase = min(20, 850 - self.player.credit_score)  # Cap at 850
-            if score_increase > 0:
-                self.player.credit_score += score_increase
-                print(f"\nPaying off your loan has improved your credit score by {score_increase} points.")
-                print(f"Your credit score is now {self.player.credit_score}.")
-
-        input("\nPress Enter to continue...")
+        ln = self.player.loans[0]
+        extra = float(input("Extra payment: $"))
+        if 0 < extra <= self.player.cash:
+            self.player.cash -= extra
+            ln.make_payment(extra)
 
     def view_assets(self):
-        """View asset details."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("ASSET DETAILS")
-        print("=" * 60)
-
-        for i, asset in enumerate(self.player.assets):
-            print(f"\nAsset {i+1}: {asset.name}")
-            print(f"Type: {asset.asset_type}")
-            print(f"Purchase Value: ${asset.purchase_value:.2f}")
-            print(f"Current Value: ${asset.current_value:.2f}")
-            print(f"Condition: {asset.condition}")
-            print(f"Age: {asset.age} years")
-
-            # Value change
-            value_change = asset.current_value - asset.purchase_value
-            value_change_percent = (value_change / asset.purchase_value) * 100
-
-            if value_change >= 0:
-                print(f"Appreciation: ${value_change:.2f} ({value_change_percent:.1f}%)")
-            else:
-                print(f"Depreciation: ${abs(value_change):.2f} ({abs(value_change_percent):.1f}%)")
-
-            if i < len(self.player.assets) - 1:
-                print("\n" + "-" * 40)
-
-        input("\nPress Enter to continue...")
+        for a in self.player.assets:
+            print(f"{a.name}: ${a.current_value:.2f} ({a.condition})")
 
     def look_for_job(self):
-        """Look for a job or a better job."""
-        clear_screen()
-        print("\n" + "=" * 60)
-        print("JOB SEARCH")
-        print("=" * 60)
+        # Simple job assignment stub
+        options = [
+            {"title": "Retail Associate", "salary": 25000},
+            {"title": "Technician", "salary": 38000},
+            {"title": "Software Dev", "salary": 65000},
+        ]
+        job = random.choice(options)
+        self.player.job = job['title']
+        self.player.salary = job['salary']
+        print(f"New job: {job['title']} at ${job['salary']}/yr")
 
-        current_salary = self.player.salary if self.player.job else 0
-
-        print(f"\nCurrent Job: {self.player.job if self.player.job else 'Unemployed'}")
-        if self.player.job:
-            print(f"Current Salary: ${current_salary}/year")
-
-        # Generate job options based on education and experience
-        job_options = []
-
-        # Base salary multiplier based on years of experience
-        experience_years = max(0, self.player.age - 18)  # Assume working age starts at 18
-        experience_multiplier = 1.0 + (experience_years * 0.03)  # 3% increase per year of experience
-
-        if self.player.education == "High School" or self.player.education == "High School Graduate":
-            job_options = [
-                {"title": "Retail Associate", "salary": int(25000 * experience_multiplier)},
-                {"title": "Food Service Worker", "salary": int(22000 * experience_multiplier)},
-                {"title": "Warehouse Worker", "salary": int(28000 * experience_multiplier)},
-                {"title": "Office Clerk", "salary": int(30000 * experience_multiplier)},
-            ]
-        elif self.player.education == "Trade School":
-            job_options = [
-                {"title": "Electrician", "salary": int(45000 * experience_multiplier)},
-                {"title": "Plumber", "salary": int(48000 * experience_multiplier)},
-                {"title": "HVAC Technician", "salary": int(50000 * experience_multiplier)},
-                {"title": "Automotive Mechanic", "salary": int(42000 * experience_multiplier)},
-            ]
-        elif self.player.education == "College Graduate":
-            job_options = [
-                {"title": "Accountant", "salary": int(60000 * experience_multiplier)},
-                {"title": "Marketing Manager", "salary": int(65000 * experience_multiplier)},
-                {"title": "Software Developer", "salary": int(75000 * experience_multiplier)},
-                {"title": "Financial Analyst", "salary": int(70000 * experience_multiplier)},
-            ]
-        else:  # Default/basic jobs
-            job_options = [
-                {"title": "Retail Associate", "salary": int(25000 * experience_multiplier)},
-                {"title": "Food Service Worker", "salary": int(22000 * experience_multiplier)},
-                {"title": "Warehouse Worker", "salary": int(28000 * experience_multiplier)},
-            ]
-
-        # Add some randomness to salaries (±10%)
-        for job in job_options:
-            job["salary"] = int(job["salary"] * random.uniform(0.9, 1.1))
-
-        # Filter out jobs that don't offer at least 5% more than current salary (if employed)
-        if self.player.job:
-            job_options = [job for job in job_options if job["salary"] >= current_salary * 1.05]
-
-        # If no jobs available after filtering
-        if not job_options:
-            print("\nAfter searching, you couldn't find any jobs that would be a significant")
-            print("improvement over your current position. Keep building your skills and")
-            print("try again later!")
-            input("\nPress Enter to continue...")
-            return
-
-        # Display job options
-        print("\nThe following job opportunities are available to you:")
-        for i, job in enumerate(job_options):
-            print(f"{i+1}. {job['title']} - ${job['salary']}/year")
-
-        print("\n0. Cancel job search")
-
-        # Get player choice
-        choice = -1
-        while choice < 0 or choice > len(job_options):
-            try:
-                choice = int(input(f"\nWhich job would you like to apply for? (0-{len(job_options)}): "))
-            except ValueError:
-                print("Please enter a valid number.")
-
-        if choice == 0:
-            print("\nYou've decided not to change jobs at this time.")
-            input("\nPress Enter to continue...")
-            return
-
-        # Apply for job
-        selected_job = job_options[choice-1]
-
-        # Job application success chance based on qualifications
-        base_success_chance = 0.7  # 70% base chance
-
-        # Adjust for education
-        if self.player.education == "College Graduate":
-            base_success_chance += 0.2
-        elif self.player.education == "Trade School":
-            base_success_chance += 0.1
-
-        # Adjust for experience
-        base_success_chance += min(0.2, experience_years * 0.01)  # Up to 20% bonus for experience
-
-        # Cap at 95% chance
-        success_chance = min(0.95, base_success_chance)
-
-        print(f"\nYou've applied for the {selected_job['title']} position.")
-        print("The hiring manager is reviewing your application...")
-        time.sleep(2)  # Dramatic pause
-
-        if random.random() < success_chance:
-            print("\nCongratulations! You got the job!")
-
-            old_job = self.player.job
-            old_salary = self.player.salary
-
-            self.player.job = selected_job["title"]
-            self.player.salary = selected_job["salary"]
-
-            print(f"\nYou are now a {self.player.job} earning ${self.player.salary}/year.")
-
-            if old_job:
-                salary_increase = self.player.salary - old_salary
-                percent_increase = (salary_increase / old_salary) * 100
-                print(f"That's a raise of ${salary_increase}/year ({percent_increase:.1f}%)!")
-
-            print(f"Your monthly income is now ${self.player.salary/12:.2f}.")
-        else:
-            print("\nUnfortunately, the company decided to go with another candidate.")
-            print("Don't be discouraged! Keep improving your skills and try again.")
-
-        input("\nPress Enter to continue...")
-
-    def end_game(self, reason):
-        """End the game and show final stats (text version)."""
-        clear_screen()
-        print("\n" + "=" * 60)
-
-        if reason == "retirement":
-            print("CONGRATULATIONS ON YOUR RETIREMENT!")
-            print("=" * 60)
-            print(f"\nAfter {self.current_year} years, you've reached retirement age!")
-        else:
-            print("GAME OVER")
-            print("=" * 60)
-            print(f"\nYour financial journey has ended after {self.current_year} years.")
-
-        # Calculate net worth
-        cash = self.player.cash
-        bank_balance = self.player.bank_account.balance if self.player.bank_account else 0
-        credit_card_debt = self.player.credit_card.balance if self.player.credit_card else 0
-
-        loan_debt = 0
-        for loan in self.player.loans:
-            loan_debt += loan.current_balance
-
-        asset_value = 0
-        for asset in self.player.assets:
-            asset_value += asset.current_value
-
-        net_worth = cash + bank_balance - credit_card_debt - loan_debt + asset_value
-
-        # Display final stats
-        print("\n--- FINAL FINANCIAL SUMMARY ---")
-        print(f"Cash: ${cash:.2f}")
-        print(f"Bank Balance: ${bank_balance:.2f}")
-        print(f"Credit Card Debt: ${credit_card_debt:.2f}")
-        print(f"Loan Debt: ${loan_debt:.2f}")
-        print(f"Asset Value: ${asset_value:.2f}")
-        print(f"Net Worth: ${net_worth:.2f}")
-        print(f"Credit Score: {self.player.credit_score}")
-
-        # Family summary
-        if self.player.family:
-            print("\n--- FAMILY ---")
-            for member in self.player.family:
-                if member["relation"] == "Spouse":
-                    print(f"Spouse: Age {member['age'] + self.current_year}")
-                else:
-                    print(f"{member['relation']}: {member['name']}, Age {member['age'] + self.current_year}")
-
-        # Financial rating
-        if net_worth >= 1000000:
-            rating = "Financial Wizard"
-        elif net_worth >= 500000:
-            rating = "Financially Secure"
-        elif net_worth >= 100000:
-            rating = "Financially Stable"
-        elif net_worth >= 0:
-            rating = "Breaking Even"
-        else:
-            rating = "In Debt"
-
-        print(f"\nFinancial Rating: {rating}")
-
-        print("\nThank you for playing MONEY SMARTZ!")
-        print("=" * 60)
-
-        self.game_over = True
-        input("\nPress Enter to exit...")
-
-    def end_game_gui(self, reason):
-        """End the game and show final stats (GUI version)."""
-        self.game_over = True
-        self.gui_manager.set_screen(EndGameScreen(self, reason))
-
+    # --- GUI support methods ---
     def check_life_stage_events_gui(self):
-        """Check for life stage events and show appropriate screens (GUI version)."""
-        # High school graduation
+        triggered = False
         if self.player.age == 18 and self.player.education == "High School":
             from moneySmarts.screens.life_event_screens import HighSchoolGraduationScreen
-            self.gui_manager.set_screen(HighSchoolGraduationScreen(self))
-            return True
-
-        # College graduation (if went to college)
-        elif self.player.age == 22 and self.player.education == "College (In Progress)":
+            self.gui_manager.set_screen(HighSchoolGraduationScreen(self)); return True
+        if self.player.age == 22 and self.player.education == "College (In Progress)":
             from moneySmarts.screens.life_event_screens import CollegeGraduationScreen
-            self.gui_manager.set_screen(CollegeGraduationScreen(self))
-            return True
-
-        # First full-time job opportunity
-        elif self.player.age == 22 and not self.player.job and self.player.education != "College (In Progress)":
+            self.gui_manager.set_screen(CollegeGraduationScreen(self)); return True
+        if self.player.age == 22 and not self.player.job and self.player.education != "College (In Progress)":
             from moneySmarts.screens.financial_screens import JobSearchScreen
-            self.gui_manager.set_screen(JobSearchScreen(self))
-            return True
-
-        # Car purchase opportunity
-        elif self.player.age == 20 and not any(a.asset_type == "Car" for a in self.player.assets):
+            self.gui_manager.set_screen(JobSearchScreen(self)); return True
+        if self.player.age == 20 and not any(a.asset_type=="Car" for a in self.player.assets):
             from moneySmarts.screens.life_event_screens import CarPurchaseScreen
-            self.gui_manager.set_screen(CarPurchaseScreen(self))
-            return True
+            self.gui_manager.set_screen(CarPurchaseScreen(self)); return True
+        if self.player.age == 30 and not any(a.asset_type=="House" for a in self.player.assets) and self.player.job:
+            from moneySmarts.screens.life_event_screens import HousingScreen
+            self.gui_manager.set_screen(HousingScreen(self)); return True
+        if self.player.age >= 28 and not self.player.family and self.player.job and random.random() < 0.1:
+            from moneySmarts.screens.life_event_screens import FamilyPlanningScreen
+            self.gui_manager.set_screen(FamilyPlanningScreen(self)); return True
+        return triggered
 
-        # House purchase opportunity
-        elif self.player.age == 30 and not any(a.asset_type == "House" for a in self.player.assets) and self.player.job:
-            self.gui_manager.set_screen(HousingScreen(self))
-            return True
+    def end_game(self, reason):
+        clear_screen()
+        print(f"GAME OVER - {reason}")
+        print(f"Final Net Worth: ${compute_net_worth(self.player):.2f}")
+        self.game_over = True
 
-        # Family planning opportunity
-        elif self.player.age >= 28 and not self.player.family and self.player.job:
-            if random.random() < 0.1:  # 10% chance each year after 28
-                self.gui_manager.set_screen(FamilyPlanningScreen(self))
-                return True
-
-        return False
-
-    def pause_game(self):
-        """Pause the game (for GUI mode)."""
-        self.paused = True
-
-    def play_game(self):
-        """Resume the game from pause (for GUI mode)."""
-        self.paused = False
-
-    def save_state(self, filename="savegame.dat"):
-        """Save the current game state to a file with versioning and error handling."""
+    def end_game_gui(self, reason):
+        self.game_over = True
         try:
-            data = {
-                'version': SAVEGAME_VERSION,
-                'game_state': self._serialize_state()
-            }
-            with open(filename, "wb") as f:
-                pickle.dump(data, f)
+            from moneySmarts.screens.base_screens import EndGameScreen  # lazy import
+            if self.gui_manager:
+                self.gui_manager.set_screen(EndGameScreen(self, reason))
         except Exception as e:
-            import logging
-            logging.error(f"Failed to save game: {e}")
-            print(f"Error saving game: {e}")
+            logging.debug(f"GUI end screen unavailable: {e}")
 
-    def load_state(self, filename="savegame.dat"):
-        """Load the game state from a file, with versioning and error handling for empty/corrupt files."""
-        import os
-        import logging
-        if not os.path.exists(filename):
-            print(f"Save file '{filename}' does not exist.")
-            return
-        if os.path.getsize(filename) == 0:
-            print(f"Save file '{filename}' is empty. Cannot load game state.")
-            return
-        try:
-            with open(filename, "rb") as f:
-                data = pickle.load(f)
-            version = data.get('version', 0)
-            if version != SAVEGAME_VERSION:
-                print(f"Save file version {version} does not match game version {SAVEGAME_VERSION}. Attempting to load anyway...")
-            self._deserialize_state(data['game_state'])
-        except Exception as e:
-            logging.error(f"Error loading game: {e}")
-            print(f"Error loading game: {e}")
-
+    # --- Persistence ---
     def _serialize_state(self):
-        """Convert the current game state to a serializable dictionary."""
         return {
             'player': self.player,
             'current_month': self.current_month,
             'current_year': self.current_year,
             'game_over': self.game_over,
-            # Add more fields as needed for extensibility
+            'quests': self.quests.serialize() if hasattr(self, 'quests') else [],
+            'met_mentor': self.met_mentor,
+            'quest_notifications': self.quest_notifications[-5:],
         }
 
-    def _deserialize_state(self, state):
-        """Restore the game state from a dictionary."""
-        self.player = state['player']
-        self.current_month = state['current_month']
-        self.current_year = state['current_year']
-        self.game_over = state['game_over']
-        # Add more fields as needed for extensibility
+    def _deserialize_state(self, data):
+        self.player = data['player']
+        self.current_month = data['current_month']
+        self.current_year = data['current_year']
+        self.game_over = data['game_over']
+        self.met_mentor = data.get('met_mentor', False)
+        if hasattr(self, 'quests'):
+            try:
+                self.quests.restore(data.get('quests', []))
+            except Exception:
+                pass
+        self.quest_notifications = data.get('quest_notifications', [])
+
+    def save_state(self, filename="savegame.dat"):
+        try:
+            with open(filename, 'wb') as f:
+                pickle.dump({'version': SAVEGAME_VERSION, 'game_state': self._serialize_state()}, f)
+        except Exception as e:
+            logging.error(f"Save failed: {e}")
+
+    def load_state(self, filename="savegame.dat"):
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+            print("No valid save file.")
+            return
+        try:
+            with open(filename, 'rb') as f:
+                data = pickle.load(f)
+            self._deserialize_state(data['game_state'])
+        except Exception as e:
+            logging.error(f"Load failed: {e}")
+
+    # --- Control ---
+    def quit(self):
+        self.game_over = True
+        if self.gui_manager:
+            self.gui_manager.running = False
+
+    def restart(self):
+        self.__init__()
+        if self.gui_manager:
+            try:
+                from moneySmarts.screens.base_screens import TitleScreen
+                self.gui_manager.set_screen(TitleScreen(self))
+            except Exception as e:
+                logging.error(f"Restart screen failed: {e}")

@@ -18,3 +18,15 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+.PHONY: lint test quality
+
+lint:
+	python -m ruff check .
+
+test:
+	python -m pytest -q
+
+quality: lint test
+	@echo "Quality checks passed."
+

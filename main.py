@@ -5,33 +5,28 @@ This is the main entry point for the Money Smartz game.
 It initializes the game and starts the main game loop.
 """
 
-import pygame
 import sys
+# --- Python version guard (pygame wheels not yet for 3.14; project targets 3.11/3.12) ---
+if not ((3, 11) <= sys.version_info < (3, 13)):
+    print(f"Unsupported Python version {sys.version.split()[0]} detected.\n"
+          f"Use Python 3.11 or 3.12. (Current pyproject requires >=3.11,<3.13)\n"
+          f"Fix: Install Python 3.12, recreate venv, then: pip install -r requirements.txt")
+    sys.exit(1)
+
+# Delay pygame import until after version check for clearer messaging
+try:
+    import pygame
+except ModuleNotFoundError:
+    print("pygame not installed. In an activated venv run: pip install -r requirements.txt")
+    sys.exit(1)
+
 import traceback
 import logging
 from moneySmarts import Game, GUIManager
-from moneySmarts.screens import GameScreen, TitleScreen, CreditCardScreen
-from moneySmarts.screens.base_screens import NameInputScreen, IntroScreen
-from moneySmarts.exceptions import GameError
-from moneySmarts.screens.financial_screens import (
-    BankAccountScreen, BankDetailsScreen, DepositScreen, WithdrawScreen,
-    GetDebitCardScreen, CreditCardDetailsScreen, PayCreditCardScreen,
-    LoanDetailsScreen, ExtraLoanPaymentScreen, AssetDetailsScreen,
-    JobSearchScreen
-)
-from moneySmarts.screens.life_event_screens import (
-    HighSchoolGraduationScreen, CollegeGraduationScreen,
-    CarPurchaseScreen, HousingScreen, FamilyPlanningScreen
-)
-from moneySmarts.screens.random_event_screens import RandomEventScreen
-from moneySmarts.screens.shop_screen import ShopScreen
-from moneySmarts.screens.inventory_screen import InventoryScreen
-from moneySmarts.screens.home_purchase_screen import HomePurchaseScreen
-from moneySmarts.screens.vehicle_purchase_screen import VehiclePurchaseScreen
 from moneySmarts.screens import TitleScreen
 from moneySmarts.exceptions import GameError
 
-# GUI Constants (keep only one set, remove duplicates)
+# GUI Constants
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 FPS = 60
@@ -60,10 +55,13 @@ def main():
         # Initialize pygame
         pygame.init()
         pygame.font.init()
-        pygame.mixer.init()  # Initialize mixer for sound
+        try:
+            pygame.mixer.init()
+        except Exception:
+            print("Warning: Audio mixer init failed - continuing without sound.")
 
-        # Make the window resizable
-        screen = pygame.display.set_mode((1200, 800), pygame.RESIZABLE)
+        # Make the window resizable (use constants)
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Money Smartz")
 
         # Create a game instance
@@ -82,7 +80,7 @@ def main():
     except GameError as ge:
         logging.error(f"Game error: {ge}")
         print(f"A game error occurred: {ge}")
-    except Exception as e:
+    except Exception:
         logging.error("Uncaught exception:", exc_info=True)
         print("An unexpected error occurred. Please check money_smarts.log for details.")
         traceback.print_exc()

@@ -5,8 +5,6 @@ from pygame.locals import *
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button, TextInput
 from moneySmarts.models import Loan, Asset, Card
-from moneySmarts.image_manager import image_manager
-from moneySmarts.images import get_image_path
 
 BROWN = (139, 69, 19)
 
@@ -21,11 +19,6 @@ class HighSchoolGraduationScreen(Screen):
         self.recurring_bill_message = None
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE)
         self.text_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-
-        # Load pixel art assets using centralized image references
-        self.pixel_bg = pygame.image.load(get_image_path("LIFE_EVENT_GREEN")).convert()
-        cap_path = get_image_path("GRADUATION_CAP")
-        self.pixel_cap = pygame.image.load(cap_path).convert_alpha() if os.path.exists(cap_path) else None
 
         # Buttons
         college_button = Button(
@@ -119,37 +112,28 @@ class HighSchoolGraduationScreen(Screen):
         self.game.gui_manager.set_screen(JobSearchScreen(self.game))
 
     def draw(self, surface):
-        """Draw the high school graduation screen."""
-        # Draw pixel art background
-        surface.blit(pygame.transform.scale(self.pixel_bg, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0, 0))
+        """Draw the high school graduation screen with modern UI."""
+        surface.fill(BG_TOP)
 
         # Title
-        title_surface = self.title_font.render("HIGH SCHOOL GRADUATION", True, BLUE)
+        title_surface = self.title_font.render("HIGH SCHOOL GRADUATION", True, PRIMARY)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 80))
         surface.blit(title_surface, title_rect)
 
-        # Draw pixel art graduation cap if available
-        if self.pixel_cap:
-            cap_rect = self.pixel_cap.get_rect(center=(SCREEN_WIDTH // 2, 220))  # Lowered from 180 to 220
-            surface.blit(self.pixel_cap, cap_rect)
-        else:
-            # Fallback: draw basic cap
-            cap_center_x = SCREEN_WIDTH // 2
-            cap_center_y = 220  # Lowered from 180 to 220
-
-            # Draw cap
-            pygame.draw.rect(surface, BLACK, (cap_center_x - 50, cap_center_y - 10, 100, 20))
-
-            # Draw tassel
-            pygame.draw.line(surface, YELLOW, (cap_center_x + 40, cap_center_y), (cap_center_x + 60, cap_center_y + 30), 5)
-            pygame.draw.circle(surface, YELLOW, (cap_center_x + 60, cap_center_y + 40), 10)
-
-            # Draw top
-            pygame.draw.polygon(surface, BLACK, [
-                (cap_center_x - 50, cap_center_y - 10),
-                (cap_center_x + 50, cap_center_y - 10),
-                (cap_center_x, cap_center_y - 60)
-            ])
+        # Simple cap icon (drawn)
+        cap_center_x = SCREEN_WIDTH // 2
+        cap_center_y = 220
+        # Mortarboard
+        pygame.draw.polygon(surface, BLACK, [
+            (cap_center_x - 80, cap_center_y),
+            (cap_center_x + 80, cap_center_y),
+            (cap_center_x, cap_center_y - 40)
+        ])
+        # Band
+        pygame.draw.rect(surface, BLACK, (cap_center_x - 60, cap_center_y, 120, 16))
+        # Tassel
+        pygame.draw.line(surface, YELLOW, (cap_center_x + 50, cap_center_y), (cap_center_x + 80, cap_center_y + 50), 5)
+        pygame.draw.circle(surface, YELLOW, (cap_center_x + 80, cap_center_y + 60), 8)
 
         # Explanation text
         text_lines = [
@@ -168,9 +152,8 @@ class HighSchoolGraduationScreen(Screen):
         ]
 
         for i, line in enumerate(text_lines):
-            # Use white font for better contrast
-            text_surface = self.text_font.render(line, True, WHITE)
-            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 30))  # Lowered from 250 to 300
+            text_surface = self.text_font.render(line, True, BLACK)
+            text_rect = text_surface.get_rect(center=(SCREEN_WIDTH // 2, 300 + i * 30))
             surface.blit(text_surface, text_rect)
 
         # Draw buttons
@@ -179,7 +162,9 @@ class HighSchoolGraduationScreen(Screen):
 
         # Draw recurring bill popup if needed
         if hasattr(self, 'show_recurring_bill') and self.show_recurring_bill:
-            pygame.draw.rect(surface, LIGHT_GRAY, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100, 400, 200))
+            popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 - 100, 440, 180)
+            pygame.draw.rect(surface, CARD_BG, popup_rect, border_radius=12)
+            pygame.draw.rect(surface, CARD_BORDER, popup_rect, 2, border_radius=12)
             msg_surface = self.text_font.render(self.recurring_bill_message, True, BLACK)
             msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
             surface.blit(msg_surface, msg_rect)

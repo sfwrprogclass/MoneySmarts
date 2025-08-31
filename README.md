@@ -64,6 +64,71 @@ python moneySmarts/image_manager.py
 ```
 This will copy all PNG/JPG images from `assets/images` to `assets/unity_export` for easy Unity import.
 
+## Development Environment Setup
+Use the helper scripts in `scripts/` to create and maintain a local virtual environment:
+
+Windows (Batch / CMD):
+```
+scripts\auto_start_env.bat [/force] [/noupgrade] [/quiet] [/pause] [/help]
+```
+PowerShell:
+```
+powershell -NoLogo -NoExit -ExecutionPolicy Bypass -File scripts/auto_start_env.ps1 [-Force] [-NoUpgrade] [-Quiet] [-Critical pkg1,pkg2] [-Help]
+```
+Flags:
+- force / -Force: Force dependency upgrade even if already upgraded today.
+- noupgrade / -NoUpgrade: Skip dependency upgrade (still shows outdated report).
+- quiet / -Quiet: Suppress informational output.
+- pause: (batch only) Pause before closing the window (useful when double-clicking).
+- help / -Help: Show usage and exit.
+- -Critical: (PowerShell) Specify additional critical packages to verify (default includes pygame).
+
+Exit codes (both scripts): 0=Success, 1=Script failure, 2=Critical package(s) missing.
+
+Daily Upgrades: The scripts store the last upgrade date in `.venv/last_upgrade.txt` and will skip subsequent upgrades the same day unless forced.
+
+Outdated Report: After (or even if skipping) upgrades, an informational list of outdated packages is printed.
+
+Critical Package Check: Verifies that required gameplay libraries (e.g. pygame) can be imported; exits with code 2 if missing.
+
+Manual setup (alternative):
+```bash
+python -m venv .venv
+. .venv/bin/activate  # Linux/macOS
+# or on Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -e .[dev]
+```
+
+## Running Tests
+After environment setup:
+```bash
+pytest
+```
+Add `-q` for quiet mode or `--cov` for coverage if `pytest-cov` is installed:
+```bash
+pytest --cov=moneySmarts --cov-report=term-missing
+```
+
+## Linting & Quality
+Run Ruff lint:
+```bash
+python -m ruff check .
+```
+Or use the Makefile targets (on systems with make):
+```bash
+make lint
+make test
+make quality   # runs lint + tests
+```
+
+## Continuous Integration
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on pushes and pull requests for Python 3.11 and 3.12:
+- Installs project with dev extras
+- Runs Ruff lint
+- Executes pytest (headless SDL via dummy driver)
+
+Badges or status indicators can be added later if desired.
+
 ## How to Contribute
 1. Check `docs/tasks.md` for planned improvements
 2. Fork the repository

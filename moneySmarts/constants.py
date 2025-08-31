@@ -1,11 +1,11 @@
 import os
 
-# Assets directory
+# Assets directory (canonical)
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets')
 
 # Assets
 PIXEL_FONT = "pixelated_font.ttf"  # Name of your font file
-TITLE_IMAGE = "title_moneysmartz.png"  # Title image file name
+TITLE_IMAGE = "title_background.jpg"  # Title image file name
 
 #Gold Coin
 GOLD = (212, 175, 55)
@@ -33,18 +33,37 @@ ORANGE = (255, 165, 0)
 PURPLE = (128, 0, 128)
 BROWN = (139, 69, 19)
 
+# Modern theme (new)
+PRIMARY = (56, 97, 251)          # Indigo blue
+PRIMARY_HOVER = (76, 117, 255)
+PRIMARY_TEXT = WHITE
+
+ACCENT = (0, 196, 140)           # Teal/green accent
+ACCENT_HOVER = (0, 216, 160)
+
+DANGER = (232, 65, 66)
+WARNING = (255, 168, 0)
+SUCCESS = (34, 197, 94)
+
+# Background gradient
+BG_TOP = (245, 247, 250)
+BG_BOTTOM = (225, 230, 240)
+
+CARD_BG = (250, 252, 255)
+CARD_BORDER = (220, 226, 235)
+SHADOW = (0, 0, 0, 50)
+
 # Font sizes
 FONT_SMALL = 18
 FONT_MEDIUM = 24
 FONT_LARGE = 32
 FONT_TITLE = 48
 
-# Asset paths
-ASSETS_DIR = "assets"
-IMAGES_DIR = f"{ASSETS_DIR}/images"
-BUILDINGS_DIR = f"{IMAGES_DIR}/buildings"
-EXTERIORS_DIR = f"{BUILDINGS_DIR}/exteriors"
-INTERIORS_DIR = f"{BUILDINGS_DIR}/interiors"
+# Asset paths (derived from ASSETS_DIR)
+IMAGES_DIR = os.path.join(ASSETS_DIR, 'images')
+BUILDINGS_DIR = os.path.join(IMAGES_DIR, 'buildings')
+EXTERIORS_DIR = os.path.join(BUILDINGS_DIR, 'exteriors')
+INTERIORS_DIR = os.path.join(BUILDINGS_DIR, 'interiors')
 
 # Building image filenames
 BUILDING_IMAGES = {

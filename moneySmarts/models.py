@@ -399,5 +399,5 @@ class Investment:
 
     def apply_monthly_return(self):
         monthly_return = self.amount * (self.expected_annual_return / 12)
-        self.amount += monthly_return
+        self.amount += monthly_return  # compound
         return monthly_return

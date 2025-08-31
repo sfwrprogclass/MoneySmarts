@@ -2,7 +2,6 @@ import os
 import pygame
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
-from moneySmarts.images import get_image_path
 
 VEHICLE_OPTIONS = [
     {"name": "Used Car", "price": 1200, "desc": "Reliable but basic transportation."},
@@ -18,12 +17,7 @@ class VehiclePurchaseScreen(Screen):
         self.show_popup = False
         self.popup_text = ""
         self.create_buttons()
-        # Load vehicle images using centralized image references
-        self.vehicle_images = [
-            pygame.image.load(get_image_path("VEHICLE_USED")).convert_alpha(),
-            pygame.image.load(get_image_path("VEHICLE_SEDAN")).convert_alpha(),
-            pygame.image.load(get_image_path("VEHICLE_SUV")).convert_alpha()
-        ]
+        # Removed image loading; we will draw placeholders
 
     def create_buttons(self):
         self.buttons = []
@@ -147,16 +141,26 @@ class VehiclePurchaseScreen(Screen):
         self.message = ""
         self.game.gui_manager.set_screen(ShopScreen(self.game))
 
+    def draw_vehicle_placeholder(self, surface, x, y, w=200, h=100, color=PRIMARY):
+        # Draw a simple vehicle placeholder
+        car_rect = pygame.Rect(x, y, w, h)
+        pygame.draw.rect(surface, color, car_rect, border_radius=12)
+        pygame.draw.rect(surface, CARD_BORDER, car_rect, 2, border_radius=12)
+        # Wheels
+        pygame.draw.circle(surface, BLACK, (x + int(w*0.25), y + h + 10), 14)
+        pygame.draw.circle(surface, BLACK, (x + int(w*0.75), y + h + 10), 14)
+
     def draw(self, surface):
-        surface.fill((240, 240, 220))  # Light tan background for vehicle screen
+        surface.fill(BG_TOP)
         font = pygame.font.SysFont('Arial', FONT_LARGE)
-        title = font.render("Choose Your Vehicle", True, BLUE)
+        title = font.render("Choose Your Vehicle", True, PRIMARY)
         surface.blit(title, (80, 60))
         font_small = pygame.font.SysFont('Arial', FONT_MEDIUM)
         y = 150
+        colors = [PRIMARY, ACCENT, BLUE]
         for idx, vehicle in enumerate(VEHICLE_OPTIONS):
-            # Draw vehicle image
-            surface.blit(self.vehicle_images[idx], (30, y))
+            # Draw vehicle placeholder
+            self.draw_vehicle_placeholder(surface, 30, y - 20, color=colors[idx % len(colors)])
             desc = font_small.render(vehicle['desc'], True, BLACK)
             surface.blit(desc, (500, y+20))
             y += 90
@@ -168,20 +172,20 @@ class VehiclePurchaseScreen(Screen):
         self.finance_btn.draw(surface)
         self.back_btn.draw(surface)
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        msg = msg_font.render(self.message, True, RED if "Not" in self.message or "low" in self.message else GREEN)
+        msg = msg_font.render(self.message, True, DANGER if "Not" in self.message or "low" in self.message else SUCCESS)
         surface.blit(msg, (80, 480))
         # Draw popup if needed
         if self.show_popup:
             popup_rect = pygame.Rect(200, 180, 500, 220)
-            pygame.draw.rect(surface, (255, 255, 220), popup_rect)
-            pygame.draw.rect(surface, BLUE, popup_rect, 3)
+            pygame.draw.rect(surface, (245, 255, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, ACCENT, popup_rect, 3, border_radius=12)
             lines = self.popup_text.split('\n')
             for i, line in enumerate(lines):
                 line_surf = msg_font.render(line, True, BLACK)
                 surface.blit(line_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 35))
             # Draw OK button
             ok_btn_rect = pygame.Rect(popup_rect.x + 180, popup_rect.y + 160, 140, 40)
-            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            pygame.draw.rect(surface, SUCCESS, ok_btn_rect, border_radius=8)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
             self.ok_btn_rect = ok_btn_rect

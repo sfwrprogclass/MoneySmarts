@@ -2,6 +2,7 @@ import pygame
 import random
 from moneySmarts.constants import *
 from moneySmarts.ui import Screen, Button
+from moneySmarts.utils import compute_net_worth
 
 
 def draw_text(surface, text, x, y, is_title=False):
@@ -29,6 +30,10 @@ class GameScreen(Screen):
             {"name": "Gas", "min": 20, "max": 70}
         ]
         self.current_utility_bill = None
+        # Quit confirmation
+        self.show_quit_confirm = False
+        self.quit_yes_btn = None
+        self.quit_no_btn = None
 
     def create_buttons(self):
         """Create the buttons for the game screen."""
@@ -38,6 +43,11 @@ class GameScreen(Screen):
             SCREEN_WIDTH - 220, SCREEN_HEIGHT - 60, 200, 50,
             "Continue to Next Month", action=self.continue_to_next_month)
         self.buttons.append(continue_button)
+        # Explore world button moved to bottom-left
+        explore_world_button = Button(
+            20, SCREEN_HEIGHT - 60, 200, 50,
+            "Explore World", action=self.open_overworld)
+        self.buttons.append(explore_world_button)
         if not self.game.player:
             return
         # --- Banking Menu Button ---
@@ -112,7 +122,8 @@ class GameScreen(Screen):
         if self.game.player.credit_card:
             total_debt += self.game.player.credit_card.balance
         for loan in self.game.player.loans:
-            total_debt += loan.balance
+            # Use correct attribute name
+            total_debt += loan.current_balance
         if total_debt > 10000:
             reason = "Game Over: Your debts are too high to continue."
         # Unpaid utility bills (simulate shutoff)
@@ -258,12 +269,25 @@ class GameScreen(Screen):
         self.create_buttons()  # Refresh buttons after loading
 
     def quit_game(self):
-        """Quit the game and return to main menu or exit."""
-        self.game.quit()
+        """Initiate quit confirmation instead of immediate quit."""
+        if not self.show_quit_confirm:
+            self.show_quit_confirm = True
+            self._create_quit_confirm_buttons()
 
-    def open_inventory(self):
-        from moneySmarts.screens.inventory_screen import InventoryScreen
-        self.game.gui_manager.set_screen(InventoryScreen(self.game))
+    def _create_quit_confirm_buttons(self):
+        cx = SCREEN_WIDTH // 2
+        cy = SCREEN_HEIGHT // 2 + 40
+        self.quit_yes_btn = Button(cx - 110, cy, 100, 45, "Yes", action=self._confirm_quit_execute)
+        self.quit_no_btn = Button(cx + 10, cy, 100, 45, "No", action=self._cancel_quit)
+
+    def _cancel_quit(self):
+        self.show_quit_confirm = False
+        self.quit_yes_btn = None
+        self.quit_no_btn = None
+
+    def _confirm_quit_execute(self):
+        # proceed with original quit
+        self.game.quit()
 
     def draw(self, surface):
         """Draw the game screen."""
@@ -347,26 +371,8 @@ class GameScreen(Screen):
                 draw_text(surface, family_text, 720, 130 + i * 30)
 
         # Calculate and display net worth
-        cash = self.game.player.cash
-        bank_balance = self.game.player.bank_account.balance if self.game.player.bank_account else 0
-        credit_card_debt = self.game.player.credit_card.balance if self.game.player.credit_card else 0
-
-        loan_debt = 0
-        for loan in self.game.player.loans:
-            loan_debt += loan.current_balance
-
-        asset_value = 0
-        for asset in self.game.player.assets:
-            asset_value += asset.current_value
-
-        net_worth = cash + bank_balance - credit_card_debt - loan_debt + asset_value
-
-        # Net worth with color based on value
-        if net_worth >= 0:
-            net_worth_color = GREEN
-        else:
-            net_worth_color = RED
-
+        net_worth = compute_net_worth(self.game.player)
+        net_worth_color = GREEN if net_worth >= 0 else RED
         net_worth_font = pygame.font.SysFont('Arial', FONT_LARGE)
         net_worth_text = f"NET WORTH: ${net_worth:.2f}"
         net_worth_surface = net_worth_font.render(net_worth_text, True, net_worth_color)
@@ -387,8 +393,53 @@ class GameScreen(Screen):
             self.utility_pay_btn.draw(surface)
             self.utility_skip_btn.draw(surface)
 
+        # After existing drawing including utility popup, add quit confirmation overlay
+        if self.show_quit_confirm:
+            # Dim background
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            overlay.set_alpha(160)
+            overlay.fill((0, 0, 0))
+            surface.blit(overlay, (0, 0))
+            # Dialog box
+            box_w, box_h = 420, 200
+            box_x = (SCREEN_WIDTH - box_w) // 2
+            box_y = (SCREEN_HEIGHT - box_h) // 2
+            pygame.draw.rect(surface, LIGHT_GRAY, (box_x, box_y, box_w, box_h), border_radius=12)
+            pygame.draw.rect(surface, DARK_GRAY, (box_x, box_y, box_w, box_h), 3, border_radius=12)
+            font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+            msg = "Are you sure you want to quit?"
+            msg_surface = font.render(msg, True, BLACK)
+            msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH//2, box_y + 60))
+            surface.blit(msg_surface, msg_rect)
+            # Buttons
+            if not self.quit_yes_btn or not self.quit_no_btn:
+                self._create_quit_confirm_buttons()
+            self.quit_yes_btn.draw(surface)
+            self.quit_no_btn.draw(surface)
+
     def handle_events(self, events):
-        """Handle events for the game screen."""
+        if self.show_quit_confirm:
+            # Only process quit confirmation buttons
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_click = False
+            for event in events:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click = True
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self._cancel_quit()
+                        return
+                    elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                        self._confirm_quit_execute()
+                        return
+            for btn in (self.quit_yes_btn, self.quit_no_btn):
+                if btn:
+                    action = btn.update(mouse_pos, mouse_click)
+                    if action:
+                        action()
+                        return
+            return  # Do not propagate to base while confirming
+        # Existing logic
         super().handle_events(events)
         # Handle utility bill popup
         if self.show_utility_popup:
@@ -397,10 +448,10 @@ class GameScreen(Screen):
             for event in events:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_click = True
-            if self.utility_pay_btn.update(mouse_pos, mouse_click):
+            if self.utility_pay_btn and self.utility_pay_btn.update(mouse_pos, mouse_click):
                 self.pay_utility_bill()
                 return
-            if self.utility_skip_btn.update(mouse_pos, mouse_click):
+            if self.utility_skip_btn and self.utility_skip_btn.update(mouse_pos, mouse_click):
                 self.skip_utility_bill()
                 return
 
@@ -427,3 +478,12 @@ class GameScreen(Screen):
         """Withdraw money from savings account."""
         from moneySmarts.screens.financial_screens import WithdrawFromSavingsScreen
         self.game.gui_manager.set_screen(WithdrawFromSavingsScreen(self.game))
+
+    def open_inventory(self):
+        from moneySmarts.screens.inventory_screen import InventoryScreen
+        self.game.gui_manager.set_screen(InventoryScreen(self.game))
+
+    def open_overworld(self):
+        """Switch to the overworld exploration screen."""
+        from moneySmarts.screens.overworld_screen import OverworldScreen
+        self.game.gui_manager.set_screen(OverworldScreen(self.game))

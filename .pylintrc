@@ -1,0 +1,42 @@
+[MASTER]
+py-version=3.12
+jobs=0
+ignore=__pycache__,build,dist,.git,.idea,.venv,venv,assets/images/buildings/exteriors/Modern_Exteriors_RPG_Maker_MV_v38.3 (1),assets/images/buildings/exteriors/modernexteriors-win,assets/images/buildings/exteriors/WIP_Theme_Additional_Houses (1)
+ignore-patterns=.*\.zip
+extension-pkg-whitelist=pygame
+
+[MESSAGES CONTROL]
+# Relax verbosity for game prototype
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    too-many-instance-attributes,
+    too-many-arguments,
+    too-many-locals,
+    too-many-branches,
+    too-many-statements
+
+[REPORTS]
+score=n
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=12
+max-attributes=25
+
+[TYPECHECK]
+ignored-modules=pygame
+
+[SIMILARITIES]
+min-similarity-lines=8
+
+[LOGGING]
+logging-format-style=new
+
+[EXCEPTIONS]
+overgeneral-exceptions=Exception
+

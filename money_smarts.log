@@ -351,3 +351,105 @@ Traceback (most recent call last):
     f"Current Balance: ${account.balance:.2f}",
                          ^^^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'balance'
+2025-08-20 10:34:58,088 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 225, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 149, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 262, in quit_game
+    self.game.quit()
+    ^^^^^^^^^^^^^^
+AttributeError: 'Game' object has no attribute 'quit'
+2025-08-20 10:34:58,088 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 81, in main
+    gui_manager.run()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 225, in run
+    self.current_screen.handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 392, in handle_events
+    super().handle_events(events)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 149, in handle_events
+    action()
+    ~~~~~~^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 262, in quit_game
+    self.game.quit()
+    ^^^^^^^^^^^^^^
+AttributeError: 'Game' object has no attribute 'quit'
+2025-08-27 04:15:16,873 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 242, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 166, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 113, in confirm_start_new_game
+    self.start_new_game()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 98, in start_new_game
+    from moneySmarts.screens.overworld_screen import OverworldScreen
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 68
+    self.game.gui_manager.set_screen(TitleScreen(self.game))        display_name=name,
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+2025-08-27 05:51:37,932 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 242, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 166, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 113, in confirm_start_new_game
+    self.start_new_game()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 98, in start_new_game
+    from moneySmarts.screens.overworld_screen import OverworldScreen
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 69
+    self.game.gui_manager.set_screen(TITLE_BG(self.game),     display_name=name,
+                                    ^
+SyntaxError: '(' was never closed
+2025-08-27 06:46:46,219 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 244, in run
+    self.current_screen.draw(self.screen)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 352, in draw
+    near = self._nearest_building()
+           ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'OverworldScreen' object has no attribute '_nearest_building'. Did you mean: '_enter_building'?
+2025-08-28 05:33:02,211 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 72, in main
+    gui_manager = GUIManager(game)
+                  ^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not callable
+2025-08-28 06:12:41,456 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 72, in main
+    gui_manager = GUIManager(game)
+                  ^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not callable
+2025-08-28 06:13:37,571 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 72, in main
+    gui_manager = GUIManager(game)
+                  ^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not callable
+2025-08-28 06:18:06,123 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 72, in main
+    gui_manager = GUIManager(game)
+                  ^^^^^^^^^^^^^^^^
+TypeError: 'NoneType' object is not callable

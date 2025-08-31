@@ -5,12 +5,27 @@ from moneySmarts.constants import *
 from moneySmarts.sound_manager import SoundManager
 from moneySmarts.event_manager import EventBus
 
+# --- Drawing helpers for modern UI ---
+def draw_vertical_gradient(surface, rect, top_color, bottom_color):
+    x, y, w, h = rect
+    if h <= 0:
+        return
+    for i in range(h):
+        ratio = i / max(1, h - 1)
+        r = int(top_color[0] + (bottom_color[0] - top_color[0]) * ratio)
+        g = int(top_color[1] + (bottom_color[1] - top_color[1]) * ratio)
+        b = int(top_color[2] + (bottom_color[2] - top_color[2]) * ratio)
+        pygame.draw.line(surface, (r, g, b), (x, y + i), (x + w - 1, y + i))
+
+def draw_rounded_rect(surface, color, rect, radius=10, width=0):
+    pygame.draw.rect(surface, color, rect, width, border_radius=radius)
+
 class Button:
     """
     A button UI element that can be clicked to trigger an action.
     """
-    def __init__(self, x, y, width, height, text, color=BLUE, hover_color=LIGHT_BLUE, 
-                 text_color=WHITE, font_size=FONT_MEDIUM, font_name=None, action=None):
+    def __init__(self, x, y, width, height, text, color=PRIMARY, hover_color=PRIMARY_HOVER,
+                 text_color=PRIMARY_TEXT, font_size=FONT_MEDIUM, font_name=None, action=None):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.color = color
@@ -28,13 +43,17 @@ class Button:
         self.hovered = False
 
     def draw(self, surface):
-        """Draw the button on the given surface."""
+        """Draw the button on the given surface with modern styling."""
         color = self.hover_color if self.hovered else self.color
-        # Validate color is a tuple of 3 integers (RGB)
+        # Validate color
         if not (isinstance(color, tuple) and len(color) in (3, 4) and all(isinstance(c, int) and 0 <= c <= 255 for c in color)):
-            color = (0, 120, 255)  # Default to BLUE
-        pygame.draw.rect(surface, color, self.rect)
-
+            color = PRIMARY
+        # Shadow
+        shadow_rect = self.rect.move(0, 2)
+        draw_rounded_rect(surface, (0, 0, 0, 0), shadow_rect, radius=10)  # noop for alpha; keep API
+        # Button body
+        draw_rounded_rect(surface, color, self.rect, radius=10)
+        # Text
         text_surface = self.font.render(self.text, True, self.text_color)
         text_rect = text_surface.get_rect(center=self.rect.center)
         surface.blit(text_surface, text_rect)
@@ -45,12 +64,8 @@ class Button:
         Returns the action if the button is clicked, None otherwise.
         """
         self.hovered = self.rect.collidepoint(mouse_pos)
-        if self.hovered:
-            print(f"[DEBUG] Button '{self.text}' is hovered at {mouse_pos}.")
         if self.hovered and mouse_click:
-            print(f"[DEBUG] Button '{self.text}' mouse_click detected at {mouse_pos}.")
             if self.action:
-                print(f"[DEBUG] Button '{self.text}' returning action: {self.action}")
                 return self.action
         return None
 
@@ -71,11 +86,11 @@ class TextInput:
         self.max_length = max_length
 
     def draw(self, surface):
-        """Draw the text input field on the given surface."""
-        color = LIGHT_BLUE if self.active else WHITE
-        pygame.draw.rect(surface, color, self.rect)
-        pygame.draw.rect(surface, BLACK, self.rect, 2)  # Border
-
+        """Draw the text input field with modern styling."""
+        bg_color = WHITE if self.active else CARD_BG
+        border_color = ACCENT if self.active else CARD_BORDER
+        draw_rounded_rect(surface, bg_color, self.rect, radius=8)
+        pygame.draw.rect(surface, border_color, self.rect, 2, border_radius=8)
         text_surface = self.font.render(self.text, True, BLACK)
         text_rect = text_surface.get_rect(midleft=(self.rect.left + 10, self.rect.centery))
         surface.blit(text_surface, text_rect)
@@ -98,6 +113,23 @@ class TextInput:
                     self.text += event.unicode
 
         return self.text
+
+
+# --- SFX support ---
+import pygame
+import os
+from moneySmarts.images import get_image_path
+
+SFX_CACHE = {}
+def load_sfx(name):
+    if name in SFX_CACHE:
+        return SFX_CACHE[name]
+    path = get_image_path(os.path.join('assets','sfx', name))
+    try:
+        SFX_CACHE[name] = pygame.mixer.Sound(path)
+    except Exception:
+        SFX_CACHE[name] = None
+    return SFX_CACHE[name]
 
 class Screen:
     """
@@ -139,8 +171,8 @@ class Screen:
         pass
 
     def draw(self, surface):
-        """Draw the screen on the given surface."""
-        surface.fill(WHITE)
+        """Draw the screen on the given surface with gradient background."""
+        draw_vertical_gradient(surface, (0, 0, surface.get_width(), surface.get_height()), BG_TOP, BG_BOTTOM)
         for button in self.buttons:
             button.draw(surface)
 

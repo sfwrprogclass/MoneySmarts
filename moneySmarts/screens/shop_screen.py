@@ -41,26 +41,24 @@ class ShopScreen(Screen):
 
     def create_buttons(self):
         self.buttons = []
-        y = 120
+        y = 140
         for idx, item in enumerate(SHOP_ITEMS):
-            btn = Button(60, y, 300, 50, f"{item['name']} - ${item['price']}", action=lambda i=idx: self.select_item(i))
+            btn = Button(60, y, 320, 50, f"{item['name']} - ${item['price']}", action=lambda i=idx: self.select_item(i))
             self.buttons.append(btn)
             y += 60
-        self.main_back_btn = Button(60, 600, 180, 50, "Back", color=BLUE, hover_color=LIGHT_BLUE, text_color=WHITE, action=self.go_back)
-        # Add inventory button
+        self.main_back_btn = Button(60, SCREEN_HEIGHT - 80, 180, 50, "Back", color=PRIMARY, hover_color=PRIMARY_HOVER, text_color=WHITE, action=self.go_back)
         inventory_btn = Button(
-            SCREEN_WIDTH - 220, 20, 200, 50, "View Inventory", action=self.show_inventory_popup
+            SCREEN_WIDTH - 240, 20, 200, 44, "View Inventory", action=self.show_inventory_popup
         )
         self.buttons.append(inventory_btn)
 
     def create_payment_buttons(self):
-        popup_x = 300
-        popup_y = 250
-        self.pay_cash_btn = Button(popup_x + 40, popup_y + 60, 180, 40, "Pay Cash", action=self.pay_cash)
-        self.pay_bank_btn = Button(popup_x + 40, popup_y + 110, 180, 40, "Pay Bank", action=self.pay_bank)
-        self.pay_credit_btn = Button(popup_x + 40, popup_y + 160, 180, 40, "Pay Credit", action=self.pay_credit)
-        self.popup_back_btn = Button(popup_x + 80, popup_y + 220, 120, 40, "Back", action=self.close_popup)
-
+        popup_x = SCREEN_WIDTH // 2 - 130
+        popup_y = SCREEN_HEIGHT // 2 - 120
+        self.pay_cash_btn = Button(popup_x, popup_y + 60, 260, 40, "Pay Cash", action=self.pay_cash)
+        self.pay_bank_btn = Button(popup_x, popup_y + 110, 260, 40, "Pay Bank", action=self.pay_bank)
+        self.pay_credit_btn = Button(popup_x, popup_y + 160, 260, 40, "Pay Credit", action=self.pay_credit)
+        self.popup_back_btn = Button(popup_x + 70, popup_y + 220, 120, 40, "Back", action=self.close_popup)
 
     def select_item(self, idx):
         self.selected_item = SHOP_ITEMS[idx]
@@ -250,80 +248,85 @@ class ShopScreen(Screen):
                     action()
 
     def draw(self, surface):
-        surface.fill(WHITE)
-        font = pygame.font.SysFont('Arial', FONT_LARGE)
-        title = font.render("Shop", True, BLUE)
+        surface.fill(BG_TOP)
+        title_font = pygame.font.SysFont('Arial', FONT_LARGE)
+        title = title_font.render("Shop", True, PRIMARY)
         surface.blit(title, (60, 40))
-        font_small = pygame.font.SysFont('Arial', FONT_MEDIUM)
-        y = 120
+        # Items panel
+        panel = pygame.Rect(360, 120, SCREEN_WIDTH - 420, SCREEN_HEIGHT - 180)
+        pygame.draw.rect(surface, CARD_BG, panel, border_radius=12)
+        pygame.draw.rect(surface, CARD_BORDER, panel, 2, border_radius=12)
+        desc_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
+        y = 140
         for idx, item in enumerate(SHOP_ITEMS):
-            desc = font_small.render(item['desc'], True, BLACK)
+            desc = desc_font.render(item['desc'], True, BLACK)
             surface.blit(desc, (380, y+10))
             y += 60
         for btn in self.buttons:
             if btn:
                 btn.draw(surface)
-        # Draw the main Back button (not popup)
         if self.main_back_btn:
             self.main_back_btn.draw(surface)
         msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
         # Show message as popup if not enough funds
-        if self.message and ("Not enough cash" in self.message or "Not enough in bank account" in self.message or "Not enough credit" in self.message or "Not enough funds" in self.message):
+        if self.message and ("Not enough" in self.message or "low" in self.message):
             popup_rect = pygame.Rect(250, 250, 520, 160)
-            pygame.draw.rect(surface, (255, 220, 220), popup_rect)
-            pygame.draw.rect(surface, RED, popup_rect, 3)
-            msg = msg_font.render(self.message, True, RED)
+            pygame.draw.rect(surface, (255, 240, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, DANGER, popup_rect, 3, border_radius=12)
+            msg = msg_font.render(self.message, True, DANGER)
             surface.blit(msg, (popup_rect.x + 40, popup_rect.y + 40))
             # Draw OK button centered at bottom of popup
             ok_btn_width, ok_btn_height = 140, 40
             ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
             ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
             ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
-            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            pygame.draw.rect(surface, SUCCESS, ok_btn_rect, border_radius=8)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
             self.ok_btn_rect = ok_btn_rect
             return  # Prevent drawing other popups/buttons
         else:
-            msg = msg_font.render(self.message, True, RED if "Not" in self.message else GREEN)
-            surface.blit(msg, (60, 680))
+            msg = msg_font.render(self.message, True, DANGER if "Not" in self.message else SUCCESS)
+            surface.blit(msg, (60, SCREEN_HEIGHT - 60))
         if self.selected_item:
             sel_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
             sel_msg = sel_font.render(f"Selected: {self.selected_item['name']}", True, BLACK)
-            surface.blit(sel_msg, (60, 620))
+            surface.blit(sel_msg, (60, SCREEN_HEIGHT - 120))
         # Draw the payment popup if needed
         if self.show_payment_popup and self.selected_item:
-            popup_x = 300
-            popup_y = 250
-            pygame.draw.rect(surface, LIGHT_GRAY, (popup_x, popup_y, 260, 300))
-            pygame.draw.rect(surface, BLACK, (popup_x, popup_y, 260, 300), 3)
+            popup_x = SCREEN_WIDTH // 2 - 160
+            popup_y = SCREEN_HEIGHT // 2 - 160
+            popup_rect = pygame.Rect(popup_x, popup_y, 320, 300)
+            pygame.draw.rect(surface, CARD_BG, popup_rect, border_radius=12)
+            pygame.draw.rect(surface, CARD_BORDER, popup_rect, 2, border_radius=12)
             popup_font = pygame.font.SysFont('Arial', FONT_LARGE)
-            popup_title = popup_font.render("Choose Payment", True, BLUE)
-            surface.blit(popup_title, (popup_x + 30, popup_y + 10))
+            popup_title = popup_font.render("Choose Payment", True, PRIMARY)
+            surface.blit(popup_title, (popup_x + 20, popup_y + 10))
             for btn in [self.pay_cash_btn, self.pay_bank_btn, self.pay_credit_btn, self.popup_back_btn]:
                 if btn:
                     btn.draw(surface)
         # Draw inventory popup if needed
         if hasattr(self, 'show_inventory') and self.show_inventory:
-            pygame.draw.rect(surface, LIGHT_GRAY, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 150, 400, 300))
+            inv_rect = pygame.Rect(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 - 160, 440, 320)
+            pygame.draw.rect(surface, CARD_BG, inv_rect, border_radius=12)
+            pygame.draw.rect(surface, CARD_BORDER, inv_rect, 2, border_radius=12)
             title_font = pygame.font.SysFont('Arial', FONT_LARGE)
-            title_surface = title_font.render("Inventory", True, BLACK)
+            title_surface = title_font.render("Inventory", True, PRIMARY)
             title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 120))
             surface.blit(title_surface, title_rect)
-            # List items
             items = self.game.player.inventory if hasattr(self.game.player, 'inventory') else []
             item_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
             for i, item in enumerate(items):
                 item_surface = item_font.render(f"- {item}", True, BLACK)
-                item_rect = item_surface.get_rect(left=SCREEN_WIDTH // 2 - 180, top=SCREEN_HEIGHT // 2 - 80 + i * 30)
+                item_rect = item_surface.get_rect(left=SCREEN_WIDTH // 2 - 200, top=SCREEN_HEIGHT // 2 - 90 + i * 28)
                 surface.blit(item_surface, item_rect)
             self.inventory_popup_btn.draw(surface)
         # Draw confirmation popup if needed
         if self.show_confirmation_popup:
             msg_font = pygame.font.SysFont('Arial', FONT_MEDIUM)
-            popup_rect = pygame.Rect(200, 180, 500, 280)  # Increased height for more space
-            pygame.draw.rect(surface, (255, 255, 220), popup_rect)
-            pygame.draw.rect(surface, BLUE, popup_rect, 3)
+            popup_rect = pygame.Rect(200, 180, 500, 280)
+            pygame.draw.rect(surface, (245, 255, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, ACCENT, popup_rect, 3, border_radius=12)
             lines = self.confirmation_text.split('\n')
             for i, line in enumerate(lines):
                 line_surf = msg_font.render(line, True, BLACK)
@@ -333,7 +336,7 @@ class ShopScreen(Screen):
             ok_btn_x = popup_rect.x + (popup_rect.width - ok_btn_width) // 2
             ok_btn_y = popup_rect.y + popup_rect.height - ok_btn_height - 20
             ok_btn_rect = pygame.Rect(ok_btn_x, ok_btn_y, ok_btn_width, ok_btn_height)
-            pygame.draw.rect(surface, GREEN, ok_btn_rect)
+            pygame.draw.rect(surface, SUCCESS, ok_btn_rect, border_radius=8)
             ok_text = msg_font.render("OK", True, WHITE)
             surface.blit(ok_text, (ok_btn_rect.x + 45, ok_btn_rect.y + 5))
             self.ok_btn_rect = ok_btn_rect
@@ -343,19 +346,19 @@ class ShopScreen(Screen):
         # Draw insufficient funds popup if needed
         if self.show_insufficient_popup and self.insufficient_text:
             popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 - 100, 440, 180)
-            pygame.draw.rect(surface, (220, 50, 50), popup_rect, border_radius=12)
-            pygame.draw.rect(surface, (0, 0, 0), popup_rect, 3, border_radius=12)
-            font = pygame.font.SysFont('Arial', 28, bold=True)
+            pygame.draw.rect(surface, (255, 240, 240), popup_rect, border_radius=12)
+            pygame.draw.rect(surface, DANGER, popup_rect, 3, border_radius=12)
+            font = pygame.font.SysFont('Arial', 24, bold=True)
             lines = self.insufficient_text.split('\n')
             for i, line in enumerate(lines):
-                text_surf = font.render(line, True, (255, 255, 255))
-                surface.blit(text_surf, (popup_rect.x + 30, popup_rect.y + 30 + i * 38))
+                text_surf = font.render(line, True, DANGER)
+                surface.blit(text_surf, (popup_rect.x + 30, popup_rect.y + 26 + i * 32))
             if self.insufficient_ok_btn:
                 self.insufficient_ok_btn.draw(surface)
 
     def handle_event(self, event):
         # Handle OK button for insufficient funds popup and confirmation popup
-        if (self.show_confirmation_popup or (self.message and ("Not enough cash" in self.message or "Not enough in bank account" in self.message or "Not enough credit" in self.message or "Not enough funds" in self.message))) and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if (self.show_confirmation_popup or (self.message and ("Not enough" in self.message))) and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
             if self.ok_btn_rect and self.ok_btn_rect.collidepoint(mouse_pos):
                 self.show_confirmation_popup = False

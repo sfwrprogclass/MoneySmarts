@@ -11,28 +11,17 @@ class RandomEventScreen(Screen):
         self.cash_effect = cash_effect
         self.font = pygame.font.SysFont('Arial', FONT_MEDIUM)
         self.title_font = pygame.font.SysFont('Arial', FONT_LARGE, bold=True)
-        
-        # Process the event
+        # Effect already applied in Game.trigger_random_event; prepare messages only
         if cash_effect > 0:
-            self.game.player.cash += cash_effect
             self.result_message = f"You received ${cash_effect}!"
+            self.payment_message = None
+        elif cash_effect < 0:
+            self.result_message = f"Expense: ${abs(cash_effect)}"
+            self.payment_message = "Funds adjusted automatically."
         else:
-            self.result_message = f"This costs you ${abs(cash_effect)}."
-            
-            # Handle payment
-            if self.game.player.cash >= abs(cash_effect):
-                self.game.player.cash -= abs(cash_effect)
-                self.payment_message = "You paid in cash."
-            elif self.game.player.bank_account and self.game.player.bank_account.balance >= abs(cash_effect):
-                self.game.player.bank_account.withdraw(abs(cash_effect))
-                self.payment_message = "You paid using your bank account."
-            elif self.game.player.credit_card and (self.game.player.credit_card.balance + abs(cash_effect)) <= self.game.player.credit_card.limit:
-                self.game.player.credit_card.charge(abs(cash_effect))
-                self.payment_message = "You paid using your credit card."
-            else:
-                self.game.player.credit_score -= 15
-                self.payment_message = "You couldn't afford this expense! Your credit score has been affected."
-        
+            self.result_message = "No financial impact this time."
+            self.payment_message = None
+
         # Continue button
         continue_button = Button(
             SCREEN_WIDTH // 2 - 100, 
@@ -73,7 +62,7 @@ class RandomEventScreen(Screen):
         surface.blit(result_text, result_rect)
         
         # Draw payment message if applicable
-        if self.cash_effect < 0:
+        if self.payment_message:
             payment_text = self.font.render(self.payment_message, True, BLACK)
             payment_rect = payment_text.get_rect(center=(SCREEN_WIDTH // 2, 270))
             surface.blit(payment_text, payment_rect)
