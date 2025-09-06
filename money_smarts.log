@@ -453,3 +453,23 @@ Traceback (most recent call last):
     gui_manager = GUIManager(game)
                   ^^^^^^^^^^^^^^^^
 TypeError: 'NoneType' object is not callable
+2025-09-03 08:45:31,168 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 242, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 251, in handle_events
+    button.handle_event(event)
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Button' object has no attribute 'handle_event'
+2025-09-03 20:59:22,018 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 299, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\base_screens.py", line 251, in handle_events
+    button.handle_event(event)
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Button' object has no attribute 'handle_event'

@@ -131,6 +131,56 @@ def load_sfx(name):
         SFX_CACHE[name] = None
     return SFX_CACHE[name]
 
+class ConfirmationPopup:
+    """
+    Modal confirmation popup for user actions (e.g., quit confirmation).
+    Blocks other UI interactions when active.
+    """
+    def __init__(self, x, y, width, height, message, on_confirm, on_cancel, font_size=FONT_MEDIUM, font_name=None):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.message = message
+        self.on_confirm = on_confirm
+        self.on_cancel = on_cancel
+        try:
+            if font_name:
+                self.font = pygame.font.Font(font_name, font_size)
+            else:
+                self.font = pygame.font.SysFont('Arial', font_size)
+        except:
+            self.font = pygame.font.SysFont('Arial', font_size)
+        self.confirm_btn = Button(x + 20, y + height - 60, 100, 40, "Yes", color=ACCENT, action=self.on_confirm)
+        self.cancel_btn = Button(x + width - 120, y + height - 60, 100, 40, "No", color=PRIMARY, action=self.on_cancel)
+        self.buttons = [self.confirm_btn, self.cancel_btn]
+
+    def handle_events(self, events):
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = False
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_click = True
+        for button in self.buttons:
+            action = button.update(mouse_pos, mouse_click)
+            if action:
+                action()
+                return True  # Block further event handling
+        return False
+
+    def draw(self, surface):
+        # Dim background
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))
+        surface.blit(overlay, (0, 0))
+        # Popup box
+        draw_rounded_rect(surface, CARD_BG, self.rect, radius=12)
+        pygame.draw.rect(surface, CARD_BORDER, self.rect, 2, border_radius=12)
+        # Message
+        text_surface = self.font.render(self.message, True, BLACK)
+        text_rect = text_surface.get_rect(center=(self.rect.centerx, self.rect.top + 40))
+        surface.blit(text_surface, text_rect)
+        # Buttons
+        for button in self.buttons:
+            button.draw(surface)
+
 class Screen:
     """
     Base class for all screens in the game.
@@ -142,6 +192,7 @@ class Screen:
         self.game = game
         self.buttons = []
         self.next_screen = None
+        self.popup = None  # Add popup support
 
         # Subscribe to random events for UI notification
         EventBus.subscribe("random_event", self.on_random_event)
@@ -152,19 +203,23 @@ class Screen:
         pass
 
     def handle_events(self, events):
-        """Handle pygame events for this screen."""
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_click = False
+        if self.popup:
+            handled = self.popup.handle_events(events)
+            if handled:
+                return  # Block other UI events
+        else:
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_click = False
 
-        for event in events:
-            if event.type == MOUSEBUTTONDOWN and event.button == 1:
-                mouse_click = True
+            for event in events:
+                if event.type == MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_click = True
 
-        for button in self.buttons:
-            action = button.update(mouse_pos, mouse_click)
-            if action:
-                action()
-                return
+            for button in self.buttons:
+                action = button.update(mouse_pos, mouse_click)
+                if action:
+                    action()
+                    return
 
     def update(self):
         """Update the screen state."""
@@ -175,6 +230,8 @@ class Screen:
         draw_vertical_gradient(surface, (0, 0, surface.get_width(), surface.get_height()), BG_TOP, BG_BOTTOM)
         for button in self.buttons:
             button.draw(surface)
+        if self.popup:
+            self.popup.draw(surface)
 
 class GUIManager:
     """
@@ -196,13 +253,11 @@ class GUIManager:
 
     def load_sounds(self):
         """Load all sound assets"""
-        # Get assets path relative to project root
         current_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = os.path.dirname(current_dir)  # Go up to moneySmarts directory
         assets_dir = os.path.join(root_dir, 'assets')
-        
-        # Load startup song
-        startup_song_path = os.path.join(assets_dir, 'startup_song.mp3')
+        # Use ambient_city.wav from sfx as startup music
+        startup_song_path = os.path.join(assets_dir, 'sfx', 'ambient_city.wav')
         if os.path.exists(startup_song_path):
             self.sound_manager.load_music(startup_song_path, 'startup_song')
         else:

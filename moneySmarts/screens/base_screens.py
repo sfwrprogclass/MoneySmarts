@@ -235,6 +235,28 @@ class TitleScreen(Screen):
         self.confirm_action = None
         self.confirm_message = ""
 
+    def handle_events(self, events):
+        super().handle_events(events)
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = False
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_click = True
+        # If confirmation dialog is shown, only handle events for confirm buttons
+        if self.show_confirm and self.confirm_buttons:
+            for button in self.confirm_buttons:
+                action = button.update(mouse_pos, mouse_click)
+                if action:
+                    action()
+        else:
+            for button in self.buttons:
+                # Only allow Save Game if player exists
+                if button.text == "Save Game" and self.game.player is None:
+                    continue
+                action = button.update(mouse_pos, mouse_click)
+                if action:
+                    action()
+
 class NameInputScreen(Screen):
     play_startup_music = True  # Enable music for this screen
     
@@ -243,7 +265,7 @@ class NameInputScreen(Screen):
         self.next_screen = next_screen  # 'intro' or 'overworld'
         # Load background image via image_manager
         self.background_image = None
-        self._background_original = image_manager.load_image('NAME_BG')
+        self._background_original = image_manager.load_image('intro_background.png')
         if self._background_original:
             self.background_image = self._background_original
         else:
@@ -339,6 +361,8 @@ class NameInputScreen(Screen):
         for button in self.buttons:
             button.draw(surface)
 
+
+# noinspection PyCompatibility
 class IntroScreen(Screen):
     """
     Introduction screen that explains the game.
@@ -613,10 +637,10 @@ class EndGameScreen(Screen):
         # Title
         if self.reason == "retirement":
             title = "CONGRATULATIONS ON YOUR RETIREMENT!"
-            subtitle = f"After {self.game.current_year} years, you've reached retirement age!"
+            subtitle = "After {self.game.current_year} years, you've reached retirement age!"
         else:
             title = "GAME OVER"
-            subtitle = f"Your financial journey has ended after {self.game.current_year} years."
+            subtitle = "Your financial journey has ended after {self.game.current_year} years."
 
         title_surface = self.title_font.render(title, True, BLUE)
         title_rect = title_surface.get_rect(center=(SCREEN_WIDTH // 2, 60))
