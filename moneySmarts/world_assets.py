@@ -64,6 +64,15 @@ def _classify(key_norm: str) -> str:
     if 'home' in key_norm or 'house' in key_norm or 'condo' in key_norm: return 'home'
     return 'generic'
 
+def _list_images_recursive(root: str):
+    """Recursively list all image files under a directory."""
+    image_files = []
+    for dirpath, _, filenames in os.walk(root):
+        for fname in filenames:
+            if _is_image(fname):
+                image_files.append(os.path.join(dirpath, fname))
+    return image_files
+
 def discover_buildings() -> List[BuildingDef]:
     buildings: List[BuildingDef] = []
     # Directories
@@ -72,28 +81,24 @@ def discover_buildings() -> List[BuildingDef]:
     int_bld_dir = os.path.join(IMAGES_DIR, 'buildings', 'interiors')
     int_misc_dir = os.path.join(IMAGES_DIR, 'interiors')
 
-    # Gather exteriors (both dirs)
+    # Gather exteriors (both dirs, recursively)
     exterior_files = []
     for d in (ex_bld_dir, ex_misc_dir):
-        for f in _listdir_safe(d):
-            if _is_image(f):
-                exterior_files.append(os.path.join(d, f))
+        exterior_files.extend(_list_images_recursive(d))
     # Map normalized name -> list of exteriors
     exterior_index = {}
     for path in exterior_files:
         base = os.path.splitext(os.path.basename(path))[0]
         exterior_index.setdefault(_norm(base), []).append(path)
 
-    # Gather interiors with preference order (hd > mobile > normal)
+    # Gather interiors with preference order (hd > mobile > normal, recursively)
     interior_candidates = {}
     for d in (int_bld_dir, int_misc_dir):
-        for f in _listdir_safe(d):
-            if not _is_image(f):
-                continue
-            low = f.lower()
+        for f in _list_images_recursive(d):
+            low = os.path.basename(f).lower()
             if 'interior' not in low:
                 continue
-            full = os.path.join(d, f)
+            full = f
             base = low
             # Derive logical key
             key = base
@@ -102,54 +107,72 @@ def discover_buildings() -> List[BuildingDef]:
                     key = key[:-4]
                 if key.endswith(suffix):
                     key = key[:-len(suffix)]
-            norm_key = _norm(key)
-            rank = 0 if '_hd' in low else (1 if '_mobile' in low else 2)
-            best = interior_candidates.get(norm_key)
-            if not best or rank < best['rank']:
-                interior_candidates[norm_key] = {'path': full, 'rank': rank, 'raw': f}
+            key_norm = _norm(key)
+            # Preference order: hd > mobile > normal
+            if key_norm not in interior_candidates or 'hd' in base:
+                interior_candidates[key_norm] = full
 
-    used_exteriors = set()
-
-    # Pair interiors to best exterior (exact or fuzzy match)
-    for norm_key, data in interior_candidates.items():
-        interior_path = data['path']
-        exterior_path = None
-        # Exact normalized match
-        if norm_key in exterior_index:
-            exterior_path = exterior_index[norm_key][0]
-            used_exteriors.add(exterior_path)
-        else:
-            # Fuzzy contains
-            for ek, paths in exterior_index.items():
-                if ek and norm_key and (ek in norm_key or norm_key in ek):
-                    exterior_path = paths[0]
-                    used_exteriors.add(exterior_path)
-                    break
-        # Derive original key for display
-        raw_name = data['raw']
-        base = os.path.splitext(raw_name)[0]
-        display_base = re.sub(r'_?interior(_hd|_mobile)?','', base, flags=re.IGNORECASE)
-        key_norm = norm_key or _norm(display_base)
+    # Build BuildingDef list
+    for key_norm, exteriors in exterior_index.items():
         btype = _classify(key_norm)
-        display = SPECIAL_TITLES.get(key_norm, display_base.replace('_',' ').title())
-        buildings.append(BuildingDef(key=key_norm or display_base.lower(), display_name=display, exterior_path=exterior_path, interior_path=interior_path, btype=btype))
-
-    # Add leftover exteriors without interiors
-    for norm_key, paths in exterior_index.items():
-        # pick first path
-        path = paths[0]
-        if path in used_exteriors:
-            continue
-        # Avoid duplicates by key
-        if any(b.key == norm_key for b in buildings):
-            continue
-        btype = _classify(norm_key)
-        display = SPECIAL_TITLES.get(norm_key, norm_key.replace('_',' ').title())
-        buildings.append(BuildingDef(key=norm_key, display_name=display, exterior_path=path, interior_path=None, btype=btype))
-
-    # Stable ordering: functional first, then others A-Z
-    priority = {'bank':0,'shop':1,'jobcenter':2,'school':3,'housing':4,'home':5,'generic':9}
-    buildings.sort(key=lambda b: (priority.get(b.btype, 8), b.display_name.lower()))
+        display_name = SPECIAL_TITLES.get(btype, key_norm.title())
+        exterior_path = exteriors[0] if exteriors else None
+        interior_path = interior_candidates.get(key_norm)
+        buildings.append(BuildingDef(
+            key=key_norm,
+            display_name=display_name,
+            exterior_path=exterior_path,
+            interior_path=interior_path,
+            btype=btype
+        ))
     return buildings
 
-__all__ = ['BuildingDef','discover_buildings']
+def discover_roads() -> list:
+    road_dir = os.path.join(IMAGES_DIR, 'buildings', 'exteriors', 'modernexteriors-win', 'Modern_Exteriors_48x48')
+    road_tiles = []
+    for root, _, files in os.walk(road_dir):
+        for f in files:
+            if 'road' in f.lower() and _is_image(f):
+                road_tiles.append(os.path.join(root, f))
+    return road_tiles
+
+def discover_vehicles() -> list:
+    vehicle_dir = os.path.join(IMAGES_DIR, 'buildings', 'exteriors', 'modernexteriors-win', 'Modern_Exteriors_48x48', 'ME_Theme_Sorter_48x48', '10_Vehicles_Singles_48x48')
+    vehicles = []
+    for f in _list_images_recursive(vehicle_dir):
+        vehicles.append(f)
+    return vehicles
+
+def discover_shopping_centers() -> list:
+    shop_dir = os.path.join(IMAGES_DIR, 'buildings', 'exteriors', 'modernexteriors-win', 'Modern_Exteriors_48x48', 'ME_Theme_Sorter_48x48', '9_Shopping_Center_and_Markets_Singles_48x48')
+    shops = []
+    for f in _list_images_recursive(shop_dir):
+        shops.append(f)
+    return shops
+
+# --- Asset discovery caches ---
+_asset_cache = {}
+
+# --- Caching wrappers ---
+def cached_discover_buildings():
+    if 'buildings' not in _asset_cache:
+        _asset_cache['buildings'] = discover_buildings()
+    return _asset_cache['buildings']
+
+def cached_discover_roads():
+    if 'roads' not in _asset_cache:
+        _asset_cache['roads'] = discover_roads()
+    return _asset_cache['roads']
+
+def cached_discover_vehicles():
+    if 'vehicles' not in _asset_cache:
+        _asset_cache['vehicles'] = discover_vehicles()
+    return _asset_cache['vehicles']
+
+def cached_discover_shopping_centers():
+    if 'shopping_centers' not in _asset_cache:
+        _asset_cache['shopping_centers'] = discover_shopping_centers()
+    return _asset_cache['shopping_centers']
+
+__all__ = ['BuildingDef','discover_buildings','discover_roads','discover_vehicles','discover_shopping_centers',
+           'cached_discover_buildings','cached_discover_roads','cached_discover_vehicles','cached_discover_shopping_centers']

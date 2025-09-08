@@ -193,7 +193,7 @@ class ImageManager:
         return pygame.transform.smoothscale(surf, size) if smooth else pygame.transform.scale(surf, size)
 
     def tinted(self, surf: Surface, color) -> Surface:
-        tinted = surf.copy();
+        tinted = surf.copy()
         tint = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
         tint.fill(color)
         tinted.blit(tint, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
@@ -314,6 +314,21 @@ class ImageManager:
         if not rect:
             return None
         return atlas.subsurface(rect)
+
+# --- Image cache for loaded/scaled surfaces ---
+_image_surface_cache = {}
+
+def load_image_cached(path_or_key: str, size: Optional[Tuple[int,int]] = None, smooth: bool = True, colorkey=None) -> Optional[Surface]:
+    """Load (or fetch cached) image. Accepts symbolic key in IMAGES or file path.
+    Auto-reloads if file mtime changed. Returns None if not found.
+    """
+    cache_key = f"{path_or_key}|{size[0]}x{size[1]}" if size else path_or_key
+    if cache_key in _image_surface_cache:
+        return _image_surface_cache[cache_key]
+    img = image_manager.load_image(path_or_key, size=size, smooth=smooth, colorkey=colorkey)
+    if img:
+        _image_surface_cache[cache_key] = img
+    return img
 
 # Global singleton
 image_manager = ImageManager()

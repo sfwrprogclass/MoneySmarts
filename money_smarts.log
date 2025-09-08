@@ -473,3 +473,40 @@ Traceback (most recent call last):
     button.handle_event(event)
     ^^^^^^^^^^^^^^^^^^^
 AttributeError: 'Button' object has no attribute 'handle_event'
+2025-09-08 15:53:59,873 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 297, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 443, in handle_events
+    super().handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 221, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 489, in open_overworld
+    self.game.gui_manager.set_screen(OverworldScreen(self.game))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 52, in __init__
+    base_sprite = image_manager.load_image(sprite_path)
+                  ^^^^^^^^^^^^^
+NameError: name 'image_manager' is not defined
+2025-09-08 15:56:21,657 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\main.py", line 79, in main
+    gui_manager.run()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 297, in run
+    self.current_screen.handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 443, in handle_events
+    super().handle_events(events)
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\ui.py", line 221, in handle_events
+    action()
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\game_screen.py", line 489, in open_overworld
+    self.game.gui_manager.set_screen(OverworldScreen(self.game))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 77, in __init__
+    self.tilemap = self._maybe_load_tilemap()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nicks\IdeaProjects\MoneySmarts_newVER\moneySmarts\screens\overworld_screen.py", line 149, in _maybe_load_tilemap
+    if os.path.exists(get_image_path(map_csv)) and os.path.exists(get_image_path(tileset)):
+                      ^^^^^^^^^^^^^^
+NameError: name 'get_image_path' is not defined
