@@ -8,8 +8,7 @@ from PIL import Image
 from pydub import AudioSegment
 import shutil
 
-# Dummy game object for extraction (replace with actual game instance if needed)
-class DummyGame:
+class moneySmarts:
     def __init__(self):
         self.screen = type('Screen', (), {'get_size': lambda self: (1280, 720)})()
         self.player = type('Player', (), {'bank_account': True, 'job': True, 'assets': [], 'cash': 1000, 'compute_net_worth': lambda self: 100000})()
@@ -19,7 +18,7 @@ class DummyGame:
         self.gui_manager = type('GUI', (), {'set_screen': lambda self, x: None, 'running': True})()
 
 # Instantiate overworld screen to extract data
-GAME = DummyGame()
+GAME = moneySmarts()
 overworld = OverworldScreen(GAME)
 
 # Export buildings
