@@ -8,72 +8,68 @@ TILE_SIZE = 48  # Change if your tiles are a different size
 
 # Helper to find all tileset images
 
-def find_tilesets(asset_root):
+from typing import List, Dict, Any
+
+
+def find_tilesets(asset_root: str) -> List[Dict[str, str]]:
     if not os.path.exists(asset_root):
-        print(f"ERROR: Asset folder not found: {asset_root}")
+        print("ERROR: Asset folder not found: {asset_root}")
         return []
-    tilesets = []
+    tileset = []
     for root, dirs, files in os.walk(asset_root):
-        for fname in files:
-            if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
-                rel_path = os.path.relpath(os.path.join(root, fname), os.path.dirname(__file__))
-                tilesets.append({
+        for fileName in files:
+            if fileName.lower().endswith(('.png', '.jpg', '.jpeg')):
+                rel_path = os.path.relpath(os.path.join(root, fileName), os.path.dirname(__file__))
+                tileset.append({
                     'rel_path': rel_path.replace('\\', '/'),
-                    'name': fname.split('.')[0]
+                    'name': os.path.splitext(fileName)[0]
                 })
-    return tilesets
+    return tileset
 
 # Build LDtk project JSON
 
-def build_ldtk_project(tilesets):
+def build_ldtk_project(tilesets: List[Dict[str, str]]) -> Dict[str, Any]:
     ldtk = {
-        "jsonVersion": "1.6.0",
+        "appBuildId": 0.0,
+        "appJsonVersion": "1.5.3",
+        "jsonVersion": "1.5.3",
         "defaultGridSize": TILE_SIZE,
-        "defaultLevelWidth": 40,
-        "defaultLevelHeight": 20,
-        "levels": [
-            {
-                "identifier": "Overworld",
-                "iid": "level_1",
-                "worldX": 0,
-                "worldY": 0,
-                "pxWid": 40 * TILE_SIZE,
-                "pxHei": 20 * TILE_SIZE,
-                "layerInstances": [],
-            }
-        ],
+        "defaultLevelWidth": 10,
+        "defaultLevelHeight": 10,
+        "externalLevels": False,  # LDtk expects a boolean
+        "worlds": [],
         "defs": {
-            "tilesets": [],
+            "tilesets": [
+                {
+                    "identifier": ts["name"],
+                    "relPath": ts["rel_path"],
+                    "tileGridSize": TILE_SIZE
+                } for ts in tilesets
+            ],
             "layers": [
                 {
                     "type": "Tiles",
-                    "identifier": "Terrain",
+                    "identifier": "Ground",
                     "gridSize": TILE_SIZE,
-                },
-                {
-                    "type": "Tiles",
-                    "identifier": "Buildings",
-                    "gridSize": TILE_SIZE,
-                },
-                {
-                    "type": "Tiles",
-                    "identifier": "Roads",
-                    "gridSize": TILE_SIZE,
+                    "visible": True,
+                    "optional": False
                 }
             ],
             "entities": []
-        }
+        },
+        "levels": [
+            {
+                "identifier": "Level_0",
+                "iid": "level_0",
+                "worldX": 0,
+                "worldY": 0,
+                "pxWid": 10 * TILE_SIZE,
+                "pxHei": 10 * TILE_SIZE,
+                "layerInstances": [],
+                "bgColor": "#000000"
+            }
+        ]
     }
-    # Add tilesets
-    for i, ts in enumerate(tilesets):
-        ldtk['defs']['tilesets'].append({
-            "identifier": ts['name'],
-            "relPath": ts['rel_path'],
-            "uid": 1000 + i,
-            "tileGridSize": TILE_SIZE,
-            "pxWid": TILE_SIZE,  # You can update this to actual image size if needed
-            "pxHei": TILE_SIZE
-        })
     return ldtk
 
 if __name__ == '__main__':
@@ -83,7 +79,52 @@ if __name__ == '__main__':
         print("No tilesets found. Please check your asset folder path and contents.")
     else:
         ldtk_project = build_ldtk_project(tilesets)
-        with open(LDTK_OUT, 'w') as f:
+        # Print the generated JSON for inspection
+        print(json.dumps(ldtk_project, indent=2))
+        with open(LDTK_OUT, 'w', encoding='utf-8') as f:
             json.dump(ldtk_project, f, indent=2)
-        print(f'LDtk project generated: {LDTK_OUT}')
+        print('LDtk project generated: {LDTK_OUT}')
         print('Open this file in LDtk to start editing your world!')
+    # ... existing code ...
+    # Force overwrite ldtk_minimal_test.ldtk only when explicitly requested
+    if os.environ.get('WRITE_MINIMAL_LDTK') == '1':
+        ldtk_minimal = {
+            "appBuildId": 0.0,
+            "appJsonVersion": "1.5.3",
+            "jsonVersion": "1.5.3",
+            "defaultGridSize": TILE_SIZE,
+            "defaultLevelWidth": 10,
+            "defaultLevelHeight": 10,
+            "externalLevels": False,  # LDtk expects a boolean
+            "worlds": [],
+            "defs": {
+                "tilesets": [],
+                "layers": [
+                    {
+                        "type": "Tiles",
+                        "identifier": "Ground",
+                        "gridSize": TILE_SIZE,
+                        "visible": True,
+                        "optional": False
+                    }
+                ],
+                "entities": []
+            },
+            "levels": [
+                {
+                    "identifier": "Level_0",
+                    "iid": "level_0",
+                    "worldX": 0,
+                    "worldY": 0,
+                    "pxWid": 10 * TILE_SIZE,
+                    "pxHei": 10 * TILE_SIZE,
+                    "layerInstances": [],
+                    "bgColor": "#000000"
+                }
+            ]
+        }
+        with open('ldtk_minimal_test.ldtk', 'w', encoding='utf-8') as f:
+            json.dump(ldtk_minimal, f, indent=2)
+        print('Wrote ldtk_minimal_test.ldtk')
+        print('defaultGridSize:', ldtk_minimal['defaultGridSize'])
+        print('File path:', os.path.abspath('ldtk_minimal_test.ldtk'))
