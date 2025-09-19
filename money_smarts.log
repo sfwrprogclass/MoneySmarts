@@ -453,3 +453,14 @@ Traceback (most recent call last):
     gui_manager = GUIManager(game)
                   ^^^^^^^^^^^^^^^^
 TypeError: 'NoneType' object is not callable
+2025-09-19 01:58:46,406 ERROR root Uncaught exception:
+Traceback (most recent call last):
+  File "/workspaces/MoneySmarts/main.py", line 72, in main
+    gui_manager = GUIManager(game)
+                  ^^^^^^^^^^^^^^^^
+  File "/workspaces/MoneySmarts/moneySmarts/ui.py", line 192, in __init__
+    self.sound_manager = SoundManager()
+                         ^^^^^^^^^^^^^^
+  File "/workspaces/MoneySmarts/moneySmarts/sound_manager.py", line 6, in __init__
+    pygame.mixer.init()
+pygame.error: dsp: No such audio device
